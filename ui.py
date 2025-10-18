@@ -1,85 +1,71 @@
 
 import pygame
+import numpy as np
+from map import *
 from sys import exit
 
 class UI:
+
+
     def __init__(self):
-        # --- Constantes et Initialisation de Pygame ---
-        self.SCREEN_WIDTH = 1440
+        #Dimensions de l'écran de jeu de Pygames et d'autres paramètres
+        self.SCREEN_WIDTH = 1440    
         self.SCREEN_HEIGHT = 720
         self.COLOR_BACKGROUND = (14, 38, 82)
         self.COLOR_GRID_LIGHT = (40, 90, 180)
         self.COLOR_PANEL_BORDER = (200, 220, 255)
-
+        self.map = Map()
+        #Pygame window init
         pygame.init()
         self.display_surface = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("CMI BluePrints")
         self.clock = pygame.time.Clock()
 
-        # --- Création des rectangles pour l'UI ---
-        MARGIN = 40
-        self.main_view_rect = pygame.Rect(0, 0, 400, self.SCREEN_HEIGHT - (2 * MARGIN))
-        self.main_view_rect.left = MARGIN
-        self.main_view_rect.top = MARGIN
+        #Définition des dimensions des différentes parties de l'UI
+        self.MARGIN = 40
+        self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT = 680,200
+        self.MAP_WIDTH, self.MAP_HEIGHT = 400, (self.SCREEN_HEIGHT - (2 * self.MARGIN))
+        self.ACTION_MENU_WIDTH, self.ACTION_MENU_HEIGHT = 920, 400
 
-        self.inventory_rect = pygame.Rect(0, 0, 680, 200)
-        self.inventory_rect.left = self.main_view_rect.right + MARGIN
-        self.inventory_rect.top = MARGIN
+
+        self.main_view_rect = pygame.Rect(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT)
+        self.main_view_rect.left = self.MARGIN
+        self.main_view_rect.top = self.MARGIN
+
+        self.inventory_rect = pygame.Rect(0, 0, self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT)
+        self.inventory_rect.left = self.main_view_rect.right + self.MARGIN
+        self.inventory_rect.top = self.MARGIN
 
         self.current_room_panel_rect = pygame.Rect(0, 0, 200, 200)
-        self.current_room_panel_rect.left = self.inventory_rect.right + MARGIN
-        self.current_room_panel_rect.top = MARGIN
+        self.current_room_panel_rect.left = self.inventory_rect.right + self.MARGIN
+        self.current_room_panel_rect.top = self.MARGIN
 
-        self.draw_room_rect = pygame.Rect(0, 0, 920, 400)
+        self.draw_room_rect = pygame.Rect(0, 0, self.ACTION_MENU_WIDTH, self.ACTION_MENU_HEIGHT)
         self.draw_room_rect.left = self.inventory_rect.left
-        self.draw_room_rect.top = self.inventory_rect.bottom + MARGIN
+        self.draw_room_rect.top = self.inventory_rect.bottom + self.MARGIN
 
         self.main_border_rect = pygame.Rect(20, 20, self.SCREEN_WIDTH - 40, self.SCREEN_HEIGHT - 40)
-        
-        # --- Gestion des Salles ---
-        # 1. Base de données des salles
-        self.room_data = {
-            'entrance_hall': {'path': 'Images/Rooms/Entrance_Hall.png'},
-            'library': {'path': 'Images/Rooms/Library.png'}
-        }
-        
-        # 2. Variables pour stocker les images de la salle ACTUELLE
-        self.current_room_image = None
-        self.current_room_image_rect = None
-        self.current_room_icon = None
-        self.current_room_icon_rect = None
-
-        # 3. On charge la salle de départ
-        self.set_current_room('entrance_hall')
 
 
-    # <--- NOUVELLE FONCTION ---
-    def set_current_room(self, room_name):
-        """
-        Charge et prépare les images pour une salle donnée.
-        Cette fonction met à jour les images qui seront affichées.
-        """
-        if room_name in self.room_data:
-            try:
-                # Charger l'image originale une seule fois
-                original_image = pygame.image.load(self.room_data[room_name]['path']).convert_alpha()
-                
-                # Créer la version zoomée pour la vue actuelle 
-                self.current_room_image = pygame.transform.scale(original_image, (200, 200))
-                self.current_room_image_rect = self.current_room_image.get_rect(center=self.current_room_panel_rect.center)
-                
-                # Créer l'icône pour la carte PROBLÉMATIQUE : cahnge la case qui a déjà été posée
-                self.current_room_icon = pygame.transform.scale(original_image, (80, 80))
-                self.current_room_icon_rect = self.current_room_icon.get_rect(midbottom=self.main_view_rect.midbottom)
+    def display_MAP(self, map_array):
+        #Divise la carte en 45 cellules (cells) pour poser chacune des chambres
+        cell_width = self.MAP_WIDTH // 5
+        cell_height = self.MAP_HEIGHT // 9
+        active_rooms = [(i, j) for i in range(map_array.shape[0]) for j in range(map_array.shape[1]) if map_array[i, j] is not None]
 
-            except pygame.error:
-                print(f"ERREUR: Fichier image introuvable pour la salle '{room_name}' au chemin: {self.room_data[room_name]['path']}")
-                # En cas d'erreur, on efface les images pour éviter de planter
-                self.current_room_image = None
-                self.current_room_icon = None
-        else:
-            print(f"ERREUR: La salle '{room_name}' n'existe pas dans room_data.")
+        for x,y in active_rooms:
+            current_cell = pygame.Rect(0, 0, cell_width, cell_height)
+            cell_x = x * cell_width + self.MARGIN
+            cell_y = y * cell_height + self.MARGIN
 
+            current_cell.topleft = (cell_x, cell_y)
+            pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, current_cell, border_radius=10)
+            if map_array[x,y].image:
+                img = pygame.image.load(map_array[x,y].image).convert_alpha()
+                img = pygame.transform.scale(img, (80, 80))
+                self.display_surface.blit(img, current_cell)
+            else:
+                raise ValueError(f"Image non trouvée pour display_map image {map_array[x,y].name}")
 
     def draw_background_grid(self):
         """Dessine la grille de fond sur la surface d'affichage."""
@@ -96,15 +82,6 @@ class UI:
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.main_view_rect, border_radius=10)
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.inventory_rect, border_radius=10)
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.draw_room_rect, border_radius=10)
-        
-        # On dessine le panneau de fond pour la salle actuelle
-        pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.current_room_panel_rect, border_radius=10)
-
-        # On dessine les images de la salle si elles ont été chargées
-        if self.current_room_image:
-            self.display_surface.blit(self.current_room_image, self.current_room_image_rect)
-        if self.current_room_icon:
-            self.display_surface.blit(self.current_room_icon, self.current_room_icon_rect)
 
     def run(self):
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
@@ -115,15 +92,12 @@ class UI:
                     exit()
 
 
-                # --- EXEMPLE POUR TESTER ---
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_1:
-                        self.set_current_room('entrance_hall')
-                    if event.key == pygame.K_2:
-                        self.set_current_room('library')
+                    pass
             
             self.draw_background_grid()
             self.draw_elements()
+            self.display_MAP(self.map.get_current_mapping())
 
             pygame.display.update()
             self.clock.tick(60)
