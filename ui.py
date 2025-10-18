@@ -147,6 +147,8 @@ class UI:
                     inputs.append("LEFT")
                 elif event.key == pygame.K_RIGHT:
                     inputs.append("RIGHT")
+                elif event.key == pygame.K_SPACE:
+                    inputs.append("SPACE")
 
         
         self.draw_background_grid()

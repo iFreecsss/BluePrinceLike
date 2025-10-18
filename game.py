@@ -35,14 +35,26 @@ class Game:
             self.player.face(2)
         elif input == "RIGHT":
             self.player.face(3)
-            
+
     
 
     def player_movement(self,input):
         """
         Même cas que pour player orientation.
         """
-        self.player.position(input)
+        direction = self.player.direction
+        movement = (0,0)
+        if direction == 0:
+            movement = (0,1)
+        elif direction == 1:
+            movement = (-1,0)
+        elif direction == 2:
+            movement = (0,-1)
+        elif direction == 3: 
+            movement = (1,0)
+
+        final_position = (self.player.position[0] + movement[0], self.player.position[1] - movement[1])
+        self.player.move(final_position)
     
 
     def handle_inputs(self, inputs):
