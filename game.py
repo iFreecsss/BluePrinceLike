@@ -7,7 +7,7 @@ class Game:
     def __init__(self):
         self.player = Player()
         self.map = Map()
-
+        self.data = {}
 
     def check_status(self):
         """
@@ -27,7 +27,15 @@ class Game:
         peut être modifié de façon à ce que player ne soit qu'un contenaire et Game intégres les getters/setters pour ses valeurs,
         mais a des fins de demo ça reste acceptable.
         """
-        self.player.face(input)
+        if input == "UP":
+            self.player.face(0)
+        elif input == "LEFT":
+            self.player.face(1)
+        elif input == "DOWN":
+            self.player.face(2)
+        elif input == "RIGHT":
+            self.player.face(3)
+            
     
 
     def player_movement(self,input):
@@ -37,8 +45,30 @@ class Game:
         self.player.position(input)
     
 
-    def map_list(self):
-        return self.map
+    def handle_inputs(self, inputs):
+        #input types:
+
+        #Direction
+        direction_change=["UP","DOWN","LEFT","RIGHT"]
+        #Movement_Confirmation
+        movement_confirmation = ["SPACE"]
+
+        for i in inputs:
+            if i in direction_change:
+                self.player_orientation(i)
+            
+            if i in movement_confirmation:
+                self.player_movement(i)
+
+
+    def publish_data(self):
+        """
+        Donne toutes les données pertinnents pour l'affichage, a ajouter les nouvelles données ici.
+        """
+        self.data['position'] = self.player.position
+        self.data['direction'] = self.player.direction
+        self.data['mapping'] = self.map.get_current_mapping()
+        return self.data
     
     
 
