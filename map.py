@@ -14,7 +14,9 @@ class Map:
 
     
     def place_room(self, room, position):
-        pass
+        # position est un tuple (x, y)
+        x, y = position
+        self.mapping[x, y] = room
     
 
     def get_current_mapping(self):
