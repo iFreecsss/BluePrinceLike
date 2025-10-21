@@ -51,17 +51,15 @@ class Game:
         """
         Même cas que pour player orientation.
         """
-        # --- NOUVEAU BLOC DE VÉRIFICATION ---
         direction = self.player.direction
         current_room_coords = self.player.position
-        # On récupère l'objet "salle" dans lequel le joueur se trouve
+        # on regarde dans quelle salle on est actuellement
         current_room = self.map.get_current_mapping()[current_room_coords] 
 
-        # On demande à la salle si elle a une sortie dans cette direction
+        # on check si la salle choisie a une sortie dans la direction du déplacement
         if not current_room.has_exits(direction):
-            print("Pas de porte vers ici !") # <--- Le message demandé
-            return # On arrête TOUTE la fonction ici. Rien ne se passe.
-        # --- FIN DU NOUVEAU BLOC ---
+            print("Pas de porte vers ici !")
+            return
 
         direction = self.player.direction
         movement = (0,0)
