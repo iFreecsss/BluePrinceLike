@@ -58,7 +58,6 @@ class Game:
 
         # on check si la salle choisie a une sortie dans la direction du déplacement
         if not current_room.has_exits(direction):
-            print("Pas de porte vers ici !")
             return
 
         direction = self.player.direction
@@ -155,14 +154,93 @@ class Game:
             self.current_choice_index = 0
 
     def select_room_choice(self, choice_index):
-        # est appelée par handle_room_selection une fois que le joueur a fait son choix
-        # chosen _room prend la valeur de la salle choisie
+        
         chosen_room = self.room_choices[choice_index]
-        self.map.place_room(chosen_room, self.pending_placement_position)
-        self.player.move(self.pending_placement_position)
-        # une fois la salle placée on remet l'état du jeu en exploration
+        placement_pos = self.pending_placement_position
+        
+        # la direction par laquelle on entre
+        # par exmeple si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce
+        must_enter = (self.player.direction + 2) % 4
+        
+        valid_rotations = []
+        
+        # on cherche toutes les rotations valides puis on choisit la meilleure après
+        for rotation_attempt in range(4):
+            chosen_room.change_room_orientation(rotation_attempt)
+            
+            # si la pièce ne connecte pas, on passe à la rotation suivante
+            if not chosen_room.has_exits(must_enter):
+                continue 
+
+            # la rotation est bonne avec la pièce d'origine mais il faut check les futurs voisins
+            if self.is_placement_valid(chosen_room, placement_pos):
+                valid_rotations.append(rotation_attempt) # si c'est le cas parfait, on l'ajoute aux rotations valides
+        
+        if not valid_rotations:
+            # on pourra supprimer ça plus tard quand l'aléatoire sera mieux géré
+            print(f"Échec: La pièce '{chosen_room.name}' ne peut pas être placée ici.")
+            return
+        
+        # maintenant on choisit la 'meilleure' rotation parmi les valides c'est à dire une qui donne une porte vers le haut si possible
+        best_rotation = valid_rotations[0]
+        
+        for rotation in valid_rotations:
+            chosen_room.change_room_orientation(rotation)
+            if chosen_room.has_exits(0): 
+                best_rotation = rotation
+                break # si on trouve une porte vers le nord on s'arrête là
+        # sinon prend la première valide trouvée par défaut
+        
+        print(f"Placement valide trouvé (Rotation: {best_rotation})")
+        chosen_room.change_room_orientation(best_rotation)
+        
+        self.map.place_room(chosen_room, placement_pos)
+        self.player.move(placement_pos)
+        
+        # réinitialse l'état du jeu par défaut
         self.game_state = "EXPLORING"
-        # on vide la liste pour les prochaines tirages
         self.room_choices = []
         self.pending_placement_position = None
-    
+
+    def is_placement_valid(self, room_to_place, position):
+        x, y = position
+        current_mapping = self.map.get_current_mapping()
+        
+        neighbors_coords = [
+            (0, (x, y - 1)),
+            (1, (x - 1, y)), 
+            (2, (x, y + 1)), 
+            (3, (x + 1, y))  
+        ]
+
+        MIN_X, MAX_X = 0, 4
+        MIN_Y, MAX_Y = 0, 8
+
+        for (direction_vers_voisin, (nx, ny)) in neighbors_coords:
+            
+            # voisin = mur ?
+            is_wall = not ((MIN_X <= nx <= MAX_X) and (MIN_Y <= ny <= MAX_Y))
+            
+            if is_wall:
+                # si oui verifie que la pièce n'a pas de porte dans cette direction
+                if room_to_place.has_exits(direction_vers_voisin):
+                    return False
+            else:
+                # sinon c'est une case valide de la map
+                neighbor_room = self.map.get_current_mapping()[nx, ny]
+                
+                if neighbor_room is not None:
+                    # mais il peut s'agir d'une pièce existante, on doit vérifier la cohérence des portes
+                    
+                    # direction du voisin (opposée à celle de la pièce actuelle)
+                    direction_du_voisin = (direction_vers_voisin + 2) % 4
+                    
+                    salle_actuelle_a_une_porte = room_to_place.has_exits(direction_vers_voisin)
+                    voisin_a_une_porte = neighbor_room.has_exits(direction_du_voisin)
+                    
+                    if salle_actuelle_a_une_porte != voisin_a_une_porte:
+                        return False
+            
+            # si le voisin est une case vide c'est toujours bon
+            
+        return True
