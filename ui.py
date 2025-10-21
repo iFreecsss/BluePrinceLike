@@ -5,8 +5,6 @@ from map import *
 from sys import exit
 
 class UI:
-
-
     def __init__(self):
         #Données d'affichage
         self.data= {}
@@ -16,6 +14,7 @@ class UI:
         self.COLOR_BACKGROUND = (14, 38, 82)
         self.COLOR_GRID_LIGHT = (40, 90, 180)
         self.COLOR_PANEL_BORDER = (200, 220, 255)
+        self.COLOR_PANEL_HIGHLIGHT = (255, 0, 0)
 
         #Définition des dimensions des différentes parties de l'UI
         self.MARGIN = 40
@@ -32,7 +31,8 @@ class UI:
         self.display_surface = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pygame.display.set_caption("CMI BluePrints")
         self.clock = pygame.time.Clock()
-
+        self.font = pygame.font.SysFont('Arial', 30)
+        self.COLOR_TEXT = (255, 255, 255)
 
         self.main_view_rect = pygame.Rect(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT)
         self.main_view_rect.left = self.MARGIN
@@ -51,7 +51,6 @@ class UI:
         self.draw_room_rect.top = self.inventory_rect.bottom + self.MARGIN
 
         self.main_border_rect = pygame.Rect(20, 20, self.SCREEN_WIDTH - 40, self.SCREEN_HEIGHT - 40)
-
 
     def init_cell_Mapping(self):
         cell_mapping = np.empty((5,9), dtype=np.object_)
@@ -77,11 +76,14 @@ class UI:
             current_cell = self.cell_mapping[x,y]
             pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, current_cell, border_radius=10)
             if hasattr(map_array[x,y], 'image'):
+                # changement de l'affichage car les images se chevauchaient
+                # on regarde directement la cellule sur laquelle la salle doit être et on scale à partir de la taille de la cellule
+                cell_rect = self.cell_mapping[x,y]
                 img = pygame.image.load(map_array[x,y].image).convert_alpha()
-                img = pygame.transform.scale(img, (80, 80))
-                self.display_surface.blit(img, current_cell)
+                img = pygame.transform.scale(img, (cell_rect.width, cell_rect.height)) 
+                self.display_surface.blit(img, cell_rect)
             else:
-                raise ValueError(f"Image non trouvée pour display_map image {map_array[x,y].name}")
+                    raise ValueError(f"Image non trouvée pour display_map image {map_array[x,y].name}")
 
     def display_current_room(self, map_array, player_position):
         player_x, player_y = player_position
@@ -126,6 +128,57 @@ class UI:
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.inventory_rect, border_radius=10)
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.draw_room_rect, border_radius=10)
 
+    def draw_room_choice_screen(self):
+        """
+        Affiche les 3 salles tirées au hasard dans le panneau self.draw_room_rect.
+        """
+        # le rectangle prévu à l'effet des choix de salle
+        panel = self.draw_room_rect 
+        # titre
+        title_text = self.font.render("Please choose a room : ", True, self.COLOR_TEXT)
+        # centrage du titre en haut du panneau au milieu
+        title_rect = title_text.get_rect(center=(panel.centerx, panel.top + self.MARGIN))
+        self.display_surface.blit(title_text, title_rect)
+        # on récupère toute la liste des salles à afficher qu'on a stockées dans self.data dans game.py
+        room_choices = self.data.get('room_choices', [])
+        # ainsi que l'index de la salle actuellement sélectionnée
+        current_index = self.data.get('current_choice_index', 0)
+
+        if not room_choices:
+            return
+        
+        # taille des cadres autour des cartes
+        choice_width = 250  
+        choice_height = 250 
+        
+        # Espacement entre les cartes
+        padding = (panel.width - (3 * choice_width)) // 4
+        
+        # position verticale des cartes
+        choice_y = panel.top + self.MARGIN + 40 # 40 pour laisser place au titre
+
+        for i, room in enumerate(room_choices):
+            # pour chaque room on calcule sa position horizontale dans le pannel 
+            choice_x = panel.left + padding + i * (choice_width + padding)
+            choice_rect = pygame.Rect(choice_x, choice_y, choice_width, choice_height)
+            
+            if i == current_index:
+                # si c'est la salle sélectionnée on met en évidence en rouge plus épais
+                border_color = self.COLOR_PANEL_HIGHLIGHT
+                border_width = 6
+            else:
+                border_color = self.COLOR_PANEL_BORDER
+                border_width = 4
+            
+            # cadre autour de la carte de la salle
+            pygame.draw.rect(self.display_surface, border_color, choice_rect, border_width, border_radius=10)
+
+            img = pygame.image.load(room.image).convert_alpha()
+            img = pygame.transform.scale(img, (210, 210))
+            
+            img_rect = img.get_rect(center=(choice_rect.centerx, choice_rect.centery)) # +30 pour descendre un peu
+            self.display_surface.blit(img, img_rect)
+
     def set_data(self, data):
         self.data = data
     
@@ -139,23 +192,34 @@ class UI:
                 exit()
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_z:
                     inputs.append("UP")
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_s:
                     inputs.append("DOWN")
-                elif event.key == pygame.K_LEFT:
+                elif event.key == pygame.K_q:
                     inputs.append("LEFT")
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_d:
                     inputs.append("RIGHT")
                 elif event.key == pygame.K_SPACE:
                     inputs.append("SPACE")
-
+                elif event.key == pygame.K_LEFT: # Flèche gauche
+                    inputs.append("LEFT_ROOM")
+                elif event.key == pygame.K_RIGHT: # Flèche droite
+                    inputs.append("RIGHT_ROOM")
+                elif event.key == pygame.K_RETURN: # Touche Entrée
+                    inputs.append("ENTER")
         
         self.draw_background_grid()
+
         self.draw_elements()
         self.display_MAP(self.data['mapping'])
-        self.display_Player(self.data['position'],self.data['direction'])
         self.display_current_room(self.data['mapping'],self.data['position'])
+        # mis à part car il faut que tout le reste soit dessiné quelque soit le mode
+        if self.data.get('game_state') == "DRAWING_ROOM":
+            self.draw_room_choice_screen() 
+
+        self.display_Player(self.data['position'],self.data['direction'])
+        
         pygame.display.update()
         self.clock.tick(60)
         return inputs
