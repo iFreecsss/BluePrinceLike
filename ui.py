@@ -19,7 +19,7 @@ class UI:
         #Définition des dimensions des différentes parties de l'UI
         self.MARGIN = 40
         self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT = 680,200
-        self.MAP_WIDTH, self.MAP_HEIGHT = 400, (self.SCREEN_HEIGHT - (2 * self.MARGIN))
+        self.MAP_WIDTH, self.MAP_HEIGHT = 355, (self.SCREEN_HEIGHT - (2 * self.MARGIN))
         self.ACTION_MENU_WIDTH, self.ACTION_MENU_HEIGHT = 920, 400
 
         #Définition de la carte
@@ -73,15 +73,21 @@ class UI:
         active_rooms = [(i, j) for i in range(map_array.shape[0]) for j in range(map_array.shape[1]) if map_array[i, j] is not None]
 
         for x,y in active_rooms:
-            current_cell = self.cell_mapping[x,y]
-            pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, current_cell, border_radius=10)
-            if hasattr(map_array[x,y], 'image'):
-                # changement de l'affichage car les images se chevauchaient
-                # on regarde directement la cellule sur laquelle la salle doit être et on scale à partir de la taille de la cellule
-                cell_rect = self.cell_mapping[x,y]
+
+            cell_rect = self.cell_mapping[x,y]
+            room = map_array[x,y]
+
+            if hasattr(room, 'image'):
+                
                 img = pygame.image.load(map_array[x,y].image).convert_alpha()
                 img = pygame.transform.scale(img, (cell_rect.width, cell_rect.height)) 
-                self.display_surface.blit(img, cell_rect)
+                
+                rotation_angle = room.orientation * 90
+                
+                img_rotated = pygame.transform.rotate(img, rotation_angle)
+                img_rect = img_rotated.get_rect(center = cell_rect.center)
+
+                self.display_surface.blit(img_rotated, img_rect)
             else:
                     raise ValueError(f"Image non trouvée pour display_map image {map_array[x,y].name}")
 
@@ -172,11 +178,13 @@ class UI:
             
             # cadre autour de la carte de la salle
             pygame.draw.rect(self.display_surface, border_color, choice_rect, border_width, border_radius=10)
-
+            # ON DOIT AFFICHER L'IMAGE DANS LE CADRE DES CHOIX DANS LE SENS OU ELLE SERA PLACEE 
+            # CET ESSAI EST INFRUCTUEUX CAR L'IMAGE TOUJOURS ORIENTEE A L'ENDROIT
             img = pygame.image.load(room.image).convert_alpha()
             img = pygame.transform.scale(img, (210, 210))
-            
-            img_rect = img.get_rect(center=(choice_rect.centerx, choice_rect.centery)) # +30 pour descendre un peu
+            rotation_angle = room.orientation * 90
+            img_rotated = pygame.transform.rotate(img, rotation_angle)
+            img_rect = img_rotated.get_rect(center=(choice_rect.centerx, choice_rect.centery)) # +30 pour descendre un peu
             self.display_surface.blit(img, img_rect)
 
     def set_data(self, data):
