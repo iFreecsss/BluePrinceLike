@@ -106,6 +106,18 @@ class UI:
         WIDTH = 5
         player_x, player_y = player_position
         current_player_cell = self.cell_mapping[player_x,player_y]
+        
+        BORDER_COLOR = WHITE
+        BORDER_WIDTH = 1
+        
+        points = [
+            current_player_cell.topleft,
+            current_player_cell.topright,
+            current_player_cell.bottomright,
+            current_player_cell.bottomleft
+        ]
+        
+        pygame.draw.lines(self.display_surface, BORDER_COLOR, True, points, BORDER_WIDTH)   # contour blanc autour de la case active
 
         if player_direction == 0:
             pygame.draw.line(self.display_surface, WHITE,current_player_cell.topleft, current_player_cell.topright , WIDTH)
