@@ -189,6 +189,9 @@ class Game:
             if chosen_room.has_exits(0): 
                 best_rotation = rotation
                 break # si on trouve une porte vers le nord on s'arrête là
+            elif not chosen_room.has_exits(2): # si pas de porte vers le nord on essaie d'éviter d'avoir une porte vers le sud
+                best_rotation = rotation
+                break
         # sinon prend la première valide trouvée par défaut
         
         print(f"Placement valide trouvé (Rotation: {best_rotation})")
