@@ -1,7 +1,7 @@
 from player import *
 from map import *
 from room import *
-import random
+from random_manager import * 
 
 class Game:
 
@@ -9,6 +9,9 @@ class Game:
         self.player = Player()
         self.map = Map()
         self.data = {}
+
+        # les pioches se retrouvent ici
+        self.random_manager = RandomManager()
 
         # test implémentation tirage des pièces
         # il y aura 2 modes. celui qui permet de se déplcacer librement 'EXPLORING' et celui qui oblige
@@ -19,18 +22,6 @@ class Game:
         self.room_choices = []
         # mémorise la position où placer la pièce choisie
         self.pending_placement_position = None
-        # pioche de salles
-        self.room_deck = [
-            Aquarium, Attic, Ballroom, Billiard_Room, 
-            Boiler_Room, Chamber_of_Mirrors, Closet, 
-            Coat_Check, Conference_Room
-        ]
-
-    def check_status(self):
-        """
-        Rof a voir
-        """
-        pass
 
     def player_orientation(self, input):
         """
@@ -53,10 +44,11 @@ class Game:
         """
         direction = self.player.direction
         current_room_coords = self.player.position
-        # on regarde dans quelle salle on est actuellement
+
+        # On regarde dans quelle salle on est actuellement
         current_room = self.map.get_current_mapping()[current_room_coords] 
 
-        # on check si la salle choisie a une sortie dans la direction du déplacement
+        # On check si la salle choisie a une sortie dans la direction du déplacement
         if not current_room.has_exits(direction):
             return
 
@@ -83,15 +75,12 @@ class Game:
 
             if target_cell is None:
                 # si la case adjacente est vide on peut lancer le tirage
-                print(f"Case vide à {final_position}. Lancement du tirage.")
                 self.game_state = "DRAWING_ROOM"
                 self.pending_placement_position = final_position
                 self.draw_new_rooms()
             else:
                 # si elle est déjà occupée avec une pièce on avance normalement
-                print(f"Déplacement vers la case occupée {final_position}")
                 self.player.move(final_position)
-            # rajouter les vérifications de collisions etc plus tard
 
     def handle_room_selection(self, input):
         """
@@ -141,16 +130,26 @@ class Game:
         return self.data
     
     def draw_new_rooms(self):
-            """
-            Tire 3 salles au hasard depuis le deck et les stocke.
-            """
-            # aléatoire très rudimentaire, à améliorer plus tard pour éviter les doublons, les cartes spéciales, 
-            # pas toutes les cases payantes, les directions des cases bonnes ...
-            chosen_room_classes = random.sample(self.room_deck, 3)
-            self.room_choices = [RoomClass() for RoomClass in chosen_room_classes]
-            # pour l'affichage dans l'UI
+            # Calculer la direction par laquelle le joueur va entrer
+            # (Si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce)
+            must_enter_direction = (self.player.direction + 2) % 4
+            
+            # Utiliser le random_manager pour obtenir 3 pièces valides
+            self.room_choices = self.random_manager.draw_placable_rooms(
+                self.map, 
+                self.pending_placement_position, 
+                must_enter_direction
+            )
+            
+            # Ne devrait jamais arriver mais on sait jamais
+            if not self.room_choices:
+                print(f"ERREUR: Aucune pièce du deck ne peut être placée à {self.pending_placement_position}!")
+                self.game_state = "EXPLORING"
+                self.pending_placement_position = None
+                return
+
+            # Mise à jour pour l'UI
             self.data['room_choices'] = self.room_choices
-            # mis à 0 pour commencer le choix depuis la salle de gauche
             self.current_choice_index = 0
 
     def select_room_choice(self, choice_index):
@@ -163,38 +162,38 @@ class Game:
         must_enter = (self.player.direction + 2) % 4
         
         valid_rotations = []
-        
-        # on cherche toutes les rotations valides puis on choisit la meilleure après
+
+        # Ici on sait qu'au moins une rotation est valide mais mainteannt il s'agit de choisir la meilleure
         for rotation_attempt in range(4):
             chosen_room.change_room_orientation(rotation_attempt)
             
-            # si la pièce ne connecte pas, on passe à la rotation suivante
             if not chosen_room.has_exits(must_enter):
                 continue 
 
-            # la rotation est bonne avec la pièce d'origine mais il faut check les futurs voisins
-            if self.is_placement_valid(chosen_room, placement_pos):
-                valid_rotations.append(rotation_attempt) # si c'est le cas parfait, on l'ajoute aux rotations valides
+            if self.map.is_placement_valid(chosen_room, placement_pos):
+                valid_rotations.append(rotation_attempt) 
         
         if not valid_rotations:
-            # on pourra supprimer ça plus tard quand l'aléatoire sera mieux géré
-            print(f"Échec: La pièce '{chosen_room.name}' ne peut pas être placée ici.")
+            # Normalement c'est pas possible mais on sait jamais
+            print(f"Erreur critique: La pièce '{chosen_room.name}' n'a pas de rotation valide.")
+            self.game_state = "EXPLORING"
+            self.room_choices = []
+            self.pending_placement_position = None
             return
         
-        # maintenant on choisit la 'meilleure' rotation parmi les valides c'est à dire une qui donne une porte vers le haut si possible
+        # Choix de la meilleure rotation
         best_rotation = valid_rotations[0]
-        
+
         for rotation in valid_rotations:
             chosen_room.change_room_orientation(rotation)
+
             if chosen_room.has_exits(0): 
                 best_rotation = rotation
-                break # si on trouve une porte vers le nord on s'arrête là
-            elif not chosen_room.has_exits(2): # si pas de porte vers le nord on essaie d'éviter d'avoir une porte vers le sud
+                break 
+            elif not chosen_room.has_exits(2): 
                 best_rotation = rotation
                 break
-        # sinon prend la première valide trouvée par défaut
-        
-        print(f"Placement valide trouvé (Rotation: {best_rotation})")
+
         chosen_room.change_room_orientation(best_rotation)
         
         self.map.place_room(chosen_room, placement_pos)
@@ -204,46 +203,3 @@ class Game:
         self.game_state = "EXPLORING"
         self.room_choices = []
         self.pending_placement_position = None
-
-    def is_placement_valid(self, room_to_place, position):
-        x, y = position
-        current_mapping = self.map.get_current_mapping()
-        
-        neighbors_coords = [
-            (0, (x, y - 1)),
-            (1, (x - 1, y)), 
-            (2, (x, y + 1)), 
-            (3, (x + 1, y))  
-        ]
-
-        MIN_X, MAX_X = 0, 4
-        MIN_Y, MAX_Y = 0, 8
-
-        for (direction_vers_voisin, (nx, ny)) in neighbors_coords:
-            
-            # voisin = mur ?
-            is_wall = not ((MIN_X <= nx <= MAX_X) and (MIN_Y <= ny <= MAX_Y))
-            
-            if is_wall:
-                # si oui verifie que la pièce n'a pas de porte dans cette direction
-                if room_to_place.has_exits(direction_vers_voisin):
-                    return False
-            else:
-                # sinon c'est une case valide de la map
-                neighbor_room = self.map.get_current_mapping()[nx, ny]
-                
-                if neighbor_room is not None:
-                    # mais il peut s'agir d'une pièce existante, on doit vérifier la cohérence des portes
-                    
-                    # direction du voisin (opposée à celle de la pièce actuelle)
-                    direction_du_voisin = (direction_vers_voisin + 2) % 4
-                    
-                    salle_actuelle_a_une_porte = room_to_place.has_exits(direction_vers_voisin)
-                    voisin_a_une_porte = neighbor_room.has_exits(direction_du_voisin)
-                    
-                    if salle_actuelle_a_une_porte != voisin_a_une_porte:
-                        return False
-            
-            # si le voisin est une case vide c'est toujours bon
-            
-        return True
