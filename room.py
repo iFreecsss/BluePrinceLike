@@ -2,7 +2,8 @@ class RoomObject:
     """
     Room class, inheritance only, helps stock all rooms as needed
     """
-    # Attribut de classe pour la rareté : 'common' par défaut
+    # Attribut de classe pour la rareté : common par défaut
+    # Je les met ici pour qu'ils soient difficile changeable par erreur
     rarity = 'common'
 
     def __init__(self, name, image, base_exits=None):
@@ -44,20 +45,18 @@ class AnteChamber(RoomObject):
     def __init__(self):
         super().__init__("AnteChamber", "Images/Rooms/Antechamber.png", base_exits=[1,2,3]) 
 
-# --- Voici les pièces du deck ---
-
 class Aquarium(RoomObject):
     rarity = 'uncommon'
     def __init__(self):
         super().__init__("Aquarium", "Images/Rooms/Aquarium.png", base_exits=[1,2,3])
 
 class Attic(RoomObject):
-    rarity = 'rare' 
+    rarity = 'common' 
     def __init__(self):
         super().__init__("Attic", "Images/Rooms/Attic.png", base_exits=[2]) 
 
 class Ballroom(RoomObject):
-    rarity = 'common'
+    rarity = 'uncommon'
     def __init__(self):
         super().__init__("Ballroom", "Images/Rooms/Ballroom.png", base_exits=[0,2])
 
