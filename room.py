@@ -1,8 +1,9 @@
-
 class RoomObject:
     """
     Room class, inheritance only, helps stock all rooms as needed
     """
+    # Attribut de classe pour la rareté : 'common' par défaut
+    rarity = 'common'
 
     def __init__(self, name, image, base_exits=None):
         self.name = name
@@ -10,6 +11,7 @@ class RoomObject:
         self.base_exits = base_exits
         # NORD: 0; OUEST: 1; SUD: 2; EST: 3
         self.orientation = 0
+
     def has_exits(self, direction):
 
         # dictionnaires de rotation triog et horraire
@@ -27,75 +29,64 @@ class RoomObject:
         self.orientation = rotation % 4
 
 
-
 class EntryHall(RoomObject):
-
+    rarity = 'common' 
     def __init__(self):
         super().__init__("Entrance Hall", "Images/Rooms/Entrance_Hall.png", base_exits=[0,1,3])
     
-
-
 class Parlor(RoomObject):
-    
+    rarity = 'common'
     def __init__(self):
         super().__init__("Parlor", "Images/Rooms/Parlor.png", base_exits=[1,2])
     
-
 class AnteChamber(RoomObject):
-
+    rarity = 'common' 
     def __init__(self):
         super().__init__("AnteChamber", "Images/Rooms/Antechamber.png", base_exits=[1,2,3]) 
 
+# --- Voici les pièces du deck ---
 
 class Aquarium(RoomObject):
-
+    rarity = 'uncommon'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Aquarium.png", base_exits=[1,2,3])
-
+        super().__init__("Aquarium", "Images/Rooms/Aquarium.png", base_exits=[1,2,3])
 
 class Attic(RoomObject):
-
+    rarity = 'rare' 
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Attic.png", base_exits=[2]) 
-
+        super().__init__("Attic", "Images/Rooms/Attic.png", base_exits=[2]) 
 
 class Ballroom(RoomObject):
-
+    rarity = 'common'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Ballroom.png", base_exits=[0,2])
-
+        super().__init__("Ballroom", "Images/Rooms/Ballroom.png", base_exits=[0,2])
 
 class Billiard_Room(RoomObject):
-
+    rarity = 'common'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Billiard_Room.png", base_exits=[1,2]) 
-
+        super().__init__("Billiard_Room", "Images/Rooms/Billiard_Room.png", base_exits=[1,2]) 
 
 class Boiler_Room(RoomObject):
-
+    rarity = 'uncommon'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Boiler_Room.png", base_exits=[1,2,3])
-
+        super().__init__("Boiler_Room", "Images/Rooms/Boiler_Room.png", base_exits=[1,2,3])
 
 class Chamber_of_Mirrors(RoomObject):
-
+    rarity = 'rare'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Chamber_of_Mirrors.png", base_exits=[2]) 
-
+        super().__init__("Chamber_of_Mirrors", "Images/Rooms/Chamber_of_Mirrors.png", base_exits=[2]) 
 
 class Closet(RoomObject):
-
+    rarity = 'common'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Closet.png", base_exits=[2]) 
-
+        super().__init__("Closet", "Images/Rooms/Closet.png", base_exits=[2]) 
 
 class Coat_Check(RoomObject):
-
+    rarity = 'common'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Coat_Check.png", base_exits=[2])
-
+        super().__init__("Coat_Check", "Images/Rooms/Coat_Check.png", base_exits=[2])
 
 class Conference_Room(RoomObject):
-
+    rarity = 'uncommon'
     def __init__(self):
-        super().__init__("Cloister", "Images/Rooms/Conference_Room.png", base_exits=[1,2,3]) 
+        super().__init__("Conference_Room", "Images/Rooms/Conference_Room.png", base_exits=[1,2,3])
