@@ -240,6 +240,41 @@ class UI:
                 self.message_text = None
                 self.message_timer = 0
     
+    def draw_victory_screen(self):
+        """
+        Affiche l'écran de victoire.
+        """
+        self.display_surface.fill(self.COLOR_BACKGROUND)
+        
+        victory_font = pygame.font.SysFont('Arial', 80, bold=True)
+        text_surface = victory_font.render("VICTORY !", True, self.COLOR_TEXT)
+        
+        # texte centré
+        text_rect = text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT / 2 - 50)
+        )
+        self.display_surface.blit(text_surface, text_rect)
+
+        sub_text_surface = self.font.render(
+            "You have reached the AnteChamber and completed the game!",
+            True,
+            self.COLOR_PANEL_BORDER # Une couleur un peu différente
+        )
+        sub_text_rect = sub_text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT / 2 + 40)
+        )
+        self.display_surface.blit(sub_text_surface, sub_text_rect)
+
+        quit_text_surface = self.font.render(
+            "Press Escape to exit.",
+            True,
+            self.COLOR_GRID_LIGHT # Couleur discrète
+        )
+        quit_text_rect = quit_text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 60)
+        )
+        self.display_surface.blit(quit_text_surface, quit_text_rect)
+    
     def run(self):  
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
         inputs = []
@@ -250,6 +285,9 @@ class UI:
                 exit()
 
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE: # échap pour quitter le jeu
+                    pygame.quit()
+                    exit()
                 if event.key == pygame.K_z:
                     inputs.append("UP")
                 elif event.key == pygame.K_s:
@@ -267,17 +305,27 @@ class UI:
                 elif event.key == pygame.K_RETURN: # Touche Entrée
                     inputs.append("ENTER")
         
-        self.draw_background_grid()
+        current_game_state = self.data.get('game_state')
+        
+        if current_game_state == "VICTORY":
+            # si on gagne on dessine l'écran de victoire
+            self.draw_victory_screen()
+            
+        # elif current_game_state == "GAME_OVER":
+            # self.draw_game_over_screen()
+        
+        else : 
+            self.draw_background_grid()
 
-        self.draw_elements()
-        self.display_MAP(self.data['mapping'])
-        self.display_current_room(self.data['mapping'],self.data['position'])
-        # mis à part car il faut que tout le reste soit dessiné quelque soit le mode
-        if self.data.get('game_state') == "DRAWING_ROOM":
-            self.draw_room_choice_screen() 
-
-        self.draw_warning_message()
-        self.display_Player(self.data['position'],self.data['direction'])
+            self.draw_elements()
+            self.display_MAP(self.data['mapping'])
+            self.display_current_room(self.data['mapping'],self.data['position'])
+            # mis à part car il faut que tout le reste soit dessiné quelque soit le mode
+            if current_game_state == "DRAWING_ROOM":
+                self.draw_room_choice_screen() 
+            
+            self.draw_warning_message()
+            self.display_Player(self.data['position'],self.data['direction'])
         
         pygame.display.update()
         self.clock.tick(60)
