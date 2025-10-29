@@ -9,6 +9,8 @@ class Game:
         self.player = Player()
         self.map = Map()
         self.data = {}
+        
+        self.warning_message = None
 
         # les pioches se retrouvent ici
         self.random_manager = RandomManager()
@@ -50,6 +52,7 @@ class Game:
 
         # On check si la salle choisie a une sortie dans la direction du déplacement
         if not current_room.has_exits(direction):
+            self.warning_message = "Hey ! No door that way !"
             return
 
         direction = self.player.direction
@@ -127,6 +130,8 @@ class Game:
         self.data['room_choices'] = self.room_choices
         # on rajoute l'index de la salle actuellement sélectionnée pour l'affichage de l'UI (contours rouges)
         self.data['current_choice_index'] = self.current_choice_index
+        self.data['warning_message'] = self.warning_message
+        self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
         return self.data
     
     def draw_new_rooms(self):
@@ -151,7 +156,7 @@ class Game:
             # On pré-calcule la meilleure orientation pour chaque pièce
             # et on l'applique directement à l'instance.
             for room in self.room_choices:
-                best_rot = self._find_best_rotation(
+                best_rot = self.find_best_rotation(
                     room, 
                     self.pending_placement_position, 
                     must_enter_direction
@@ -176,7 +181,7 @@ class Game:
         self.room_choices = []
         self.pending_placement_position = None
         
-    def _find_best_rotation(self, room, position, must_enter_direction):
+    def find_best_rotation(self, room, position, must_enter_direction):
         """
         Trouve la meilleure rotation pour une pièce.
         Retourne l'entier de la rotation (0-3).
