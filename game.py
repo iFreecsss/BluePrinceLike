@@ -84,6 +84,7 @@ class Game:
             else:
                 # si elle est déjà occupée avec une pièce on avance normalement
                 self.player.move(final_position)
+                self.check_game_status() # on vérifie si on a gagné ou perdu
 
     def handle_room_selection(self, input):
         """
@@ -98,6 +99,10 @@ class Game:
             self.select_room_choice(self.current_choice_index)
 
     def handle_inputs(self, inputs):
+        
+        #si le jeu est gagné ou perdu ya pas d'inputs
+        if self.game_state in ["VICTORY", "GAME_OVER"]:
+            return
         
         if self.game_state == "EXPLORING":
             direction_change=["UP","DOWN","LEFT","RIGHT"]
@@ -175,11 +180,13 @@ class Game:
         
         self.map.place_room(chosen_room, placement_pos)
         self.player.move(placement_pos)
+        self.check_game_status()
         
-        # réinitialse l'état du jeu par défaut
-        self.game_state = "EXPLORING"
-        self.room_choices = []
-        self.pending_placement_position = None
+        if self.game_state != "VICTORY":
+            # réinitialse l'état du jeu par défaut
+            self.game_state = "EXPLORING"
+            self.room_choices = []
+            self.pending_placement_position = None
         
     def find_best_rotation(self, room, position, must_enter_direction):
         """
@@ -228,3 +235,15 @@ class Game:
         
         room.change_room_orientation(0) # Réinitialise à nouveau
         return best_rotation
+    
+    def check_game_status(self):
+        """
+        Vérifie si le jeu est gagné ou perdu.
+        """
+        VICTORY_POSITION = (2, 0)
+        
+        if self.player.position == VICTORY_POSITION:
+            self.game_state = "VICTORY"
+            return
+        
+        # faudra rajouter la condition de défaite
