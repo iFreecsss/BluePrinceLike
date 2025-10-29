@@ -147,6 +147,17 @@ class Game:
                 self.game_state = "EXPLORING"
                 self.pending_placement_position = None
                 return
+            
+            # On pré-calcule la meilleure orientation pour chaque pièce
+            # et on l'applique directement à l'instance.
+            for room in self.room_choices:
+                best_rot = self._find_best_rotation(
+                    room, 
+                    self.pending_placement_position, 
+                    must_enter_direction
+                )
+                # On applique cette orientation
+                room.change_room_orientation(best_rot)
 
             # Mise à jour pour l'UI
             self.data['room_choices'] = self.room_choices
@@ -157,45 +168,6 @@ class Game:
         chosen_room = self.room_choices[choice_index]
         placement_pos = self.pending_placement_position
         
-        # la direction par laquelle on entre
-        # par exmeple si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce
-        must_enter = (self.player.direction + 2) % 4
-        
-        valid_rotations = []
-
-        # Ici on sait qu'au moins une rotation est valide mais mainteannt il s'agit de choisir la meilleure
-        for rotation_attempt in range(4):
-            chosen_room.change_room_orientation(rotation_attempt)
-            
-            if not chosen_room.has_exits(must_enter):
-                continue 
-
-            if self.map.is_placement_valid(chosen_room, placement_pos):
-                valid_rotations.append(rotation_attempt) 
-        
-        if not valid_rotations:
-            # Normalement c'est pas possible mais on sait jamais
-            print(f"Erreur critique: La pièce '{chosen_room.name}' n'a pas de rotation valide.")
-            self.game_state = "EXPLORING"
-            self.room_choices = []
-            self.pending_placement_position = None
-            return
-        
-        # Choix de la meilleure rotation
-        best_rotation = valid_rotations[0]
-
-        for rotation in valid_rotations:
-            chosen_room.change_room_orientation(rotation)
-
-            if chosen_room.has_exits(0): 
-                best_rotation = rotation
-                break 
-            elif not chosen_room.has_exits(2): 
-                best_rotation = rotation
-                break
-
-        chosen_room.change_room_orientation(best_rotation)
-        
         self.map.place_room(chosen_room, placement_pos)
         self.player.move(placement_pos)
         
@@ -203,3 +175,51 @@ class Game:
         self.game_state = "EXPLORING"
         self.room_choices = []
         self.pending_placement_position = None
+        
+    def _find_best_rotation(self, room, position, must_enter_direction):
+        """
+        Trouve la meilleure rotation pour une pièce.
+        Retourne l'entier de la rotation (0-3).
+        C est une copie de l'ancienne fonction select_room_choice 
+        mais elle retourne seulement la rotation.
+        """
+        valid_rotations = []
+        
+        # Ici on sait qu'au moins une rotation est valide mais mainteannt il s'agit de choisir la meilleure
+        for rotation_attempt in range(4):
+            room.change_room_orientation(rotation_attempt) # Modifie temporairement
+            
+            if not room.has_exits(must_enter_direction):
+                continue 
+            
+            if self.map.is_placement_valid(room, position):
+                valid_rotations.append(rotation_attempt) 
+        
+        # Réinitialise pour être propre avant de choisir
+        room.change_room_orientation(0) 
+
+        if not valid_rotations:
+            # Normalement c'est pas possible mais on sait jamais
+            print(f"Erreur critique: La pièce '{room.name}' n'a pas de rotation valide.")
+            self.game_state = "EXPLORING"
+            self.room_choices = []
+            self.pending_placement_position = None
+            return 0
+
+        # Choix de la meilleure rotation
+        best_rotation = valid_rotations[0] 
+        has_found_north_exit = False
+
+        for rotation in valid_rotations:
+            room.change_room_orientation(rotation) # Re-modifie temporairement
+            
+            if room.has_exits(0): # Priorité au Nord (0)
+                best_rotation = rotation
+                has_found_north_exit = True
+                break # On a trouvé le top
+            elif not room.has_exits(2) and not has_found_north_exit: 
+                # Sinon, on évite le Sud (2), mais on continue de chercher un Nord
+                best_rotation = rotation
+        
+        room.change_room_orientation(0) # Réinitialise à nouveau
+        return best_rotation
