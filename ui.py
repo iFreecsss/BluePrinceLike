@@ -197,7 +197,7 @@ class UI:
             rotation_angle = room.orientation * 90
             img_rotated = pygame.transform.rotate(img, rotation_angle)
             img_rect = img_rotated.get_rect(center=(choice_rect.centerx, choice_rect.centery)) # +30 pour descendre un peu
-            self.display_surface.blit(img, img_rect)
+            self.display_surface.blit(img_rotated, img_rect) # on affiche les salles déjà tournées
 
     def set_data(self, data):
         self.data = data
