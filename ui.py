@@ -70,6 +70,13 @@ class UI:
 
         self.main_border_rect = pygame.Rect(20, 20, self.SCREEN_WIDTH - 40, self.SCREEN_HEIGHT - 40)
 
+        # Icône paramètres
+        # On le place dans la marge de droite
+        icon_x = self.SCREEN_WIDTH - self.MARGIN - 50 
+        # On le place dans la marge du haut
+        icon_y = self.MARGIN 
+        self.settings_icon_rect = pygame.Rect(icon_x, icon_y, 50, 40)
+
         # interface graphique pour le menu settings
         self.settings_font_small = pygame.font.SysFont('Arial', 20)
         self.settings_font_large = pygame.font.SysFont('Arial', 30, bold=True)
@@ -101,7 +108,17 @@ class UI:
         self.music_mute_rect = pygame.Rect(panel_x + p + 120, panel_y + p + 190, 25, 25)
         self.effects_mute_rect = pygame.Rect(panel_x + p + 120, panel_y + p + 260, 25, 25)
 
+        # icones restart et quit
+        self.restart_icon = pygame.image.load('Images/Icons/restart_icon.png').convert_alpha()
+        self.quit_icon = pygame.image.load('Images/Icons/quit_icon.png').convert_alpha()
+        
+        self.restart_icon = pygame.transform.scale(self.restart_icon, (50, 50))
+        self.quit_icon = pygame.transform.scale(self.quit_icon, (50, 50))
+        self.settings_icon = pygame.image.load('Images/Icons/cog_icon.png').convert_alpha()
 
+        self.restart_button_rect = pygame.Rect(panel_x + p, panel_y + panel_height - p - 50, 50, 50)
+        self.quit_button_rect = pygame.Rect(panel_x + panel_width - p - 50, panel_y + panel_height - p - 50, 50, 50)
+        self.settings_icon = pygame.transform.scale(self.settings_icon, (50, 40))
 
     def play_door_sound(self):
         if self.door_sound:
@@ -422,6 +439,11 @@ class UI:
         close_text = self.settings_font_small.render("Press P to close", True, self.COLOR_TEXT)
         self.display_surface.blit(close_text, (self.settings_panel_rect.centerx - close_text.get_width() // 2, self.settings_panel_rect.bottom - 45))
 
+        if self.restart_icon:
+            self.display_surface.blit(self.restart_icon, self.restart_button_rect)
+
+        if self.quit_icon:
+            self.display_surface.blit(self.quit_icon, self.quit_button_rect)
         return inputs
 
     def run(self):  
@@ -470,14 +492,22 @@ class UI:
                     elif event.key == pygame.K_RETURN: 
                         inputs.append("ENTER")
             
-            if game_state == "SETTINGS":
-                # si on est dans le menu settings on gère les clics sur les checkbox
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                
+                # 1. On vérifie d'abord le rouage (cliquable tout le temps)
+                if self.settings_icon_rect.collidepoint(event.pos):
+                    inputs.append("TOGGLE_SETTINGS")
+                # 2. On vérifie les boutons DU MENU (cliquables si le menu est ouvert)
+                elif game_state == "SETTINGS":
                     # collidepoint pour voir si on a cliqué sur une checkbox
                     if self.music_mute_rect.collidepoint(event.pos):
                         inputs.append(("TOGGLE_MUSIC_MUTE", True))
                     elif self.effects_mute_rect.collidepoint(event.pos):
                         inputs.append(("TOGGLE_EFFECTS_MUTE", True))
+                    elif self.restart_button_rect.collidepoint(event.pos):
+                        inputs.append("RESTART_GAME")
+                    elif self.quit_button_rect.collidepoint(event.pos):
+                        inputs.append("QUIT_GAME")
             
         
         # elif current_game_state == "GAME_OVER":
@@ -487,9 +517,16 @@ class UI:
         self.display_MAP(self.data['mapping'])
         self.display_current_room(self.data['mapping'],self.data['position'])
 
+        self.display_surface.blit(self.settings_icon, self.settings_icon_rect)
+            
         if game_state == "VICTORY":
                 # si on gagne on dessine l'écran de victoire
                 self.draw_victory_screen()
+        
+        if "QUIT_GAME" in inputs:
+            pygame.quit()
+            exit()
+
         if game_state == "DRAWING_ROOM":
             self.draw_room_choice_screen() 
         
