@@ -33,6 +33,12 @@ class UI:
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont('Arial', 30)
         self.COLOR_TEXT = (255, 255, 255)
+        
+        self.message_text = None
+        self.message_timer = 0
+        self.MESSAGE_DURATION = 1250
+        self.message_font = pygame.font.SysFont('Arial', 24, bold=True)
+        self.COLOR_MESSAGE_TEXT = (255, 220, 220) # Un blanc-cassé-rose
 
         self.main_view_rect = pygame.Rect(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT)
         self.main_view_rect.left = self.MARGIN
@@ -201,6 +207,38 @@ class UI:
 
     def set_data(self, data):
         self.data = data
+        
+        new_message = self.data.get('warning_message')
+        if new_message:
+            self.message_text = new_message
+            # on stocke l'heure de réception (en ms)
+            self.message_timer = pygame.time.get_ticks()
+            
+    def draw_warning_message(self):
+        """
+        Affiche le message d'avertissement au centre de la carte s'il existe
+        et si son minuteur n'est pas écoulé.
+        """
+        if self.message_text:
+            current_time = pygame.time.get_ticks()
+            
+            if current_time - self.message_timer < self.MESSAGE_DURATION:
+                
+                text_surface = self.message_font.render(self.message_text, True, self.COLOR_MESSAGE_TEXT)
+                text_rect = text_surface.get_rect(center=self.main_view_rect.center) # centré sur la map
+                
+                # fond semi-transparent
+                bg_rect = text_rect.inflate(20, 10) # 20px de marge H, 10px de marge V
+                bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+                bg_surface.fill((0, 0, 0, 150)) # Noir semi-transparent
+                
+                self.display_surface.blit(bg_surface, bg_rect)
+                self.display_surface.blit(text_surface, text_rect)
+                
+            else:
+                # le temps est écoulé on efface le message
+                self.message_text = None
+                self.message_timer = 0
     
     def run(self):  
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
@@ -238,6 +276,7 @@ class UI:
         if self.data.get('game_state') == "DRAWING_ROOM":
             self.draw_room_choice_screen() 
 
+        self.draw_warning_message()
         self.display_Player(self.data['position'],self.data['direction'])
         
         pygame.display.update()
