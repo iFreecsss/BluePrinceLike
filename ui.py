@@ -440,11 +440,17 @@ class UI:
                 pygame.quit()
                 exit()
 
+            
             # gestion clavier
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_p: 
                     inputs.append("TOGGLE_SETTINGS")
-                
+                if game_state in ["VICTORY", "GAME_OVER"]:
+                    if event.key == pygame.K_ESCAPE:
+                        pygame.quit()
+                        exit()
+                    # Si le jeu est fini, on n'écoute aucune autre touche
+                    continue
                 # Le jeu ne fonctionne que si on n'est pas dans le menu settings
                 if game_state != "SETTINGS":
                     if event.key == pygame.K_z:
@@ -472,18 +478,18 @@ class UI:
                         inputs.append(("TOGGLE_MUSIC_MUTE", True))
                     elif self.effects_mute_rect.collidepoint(event.pos):
                         inputs.append(("TOGGLE_EFFECTS_MUTE", True))
-        
-        if game_state == "VICTORY":
-            # si on gagne on dessine l'écran de victoire
-            self.draw_victory_screen()
             
+        
         # elif current_game_state == "GAME_OVER":
             # self.draw_game_over_screen()
         self.draw_background_grid()
         self.draw_elements()
         self.display_MAP(self.data['mapping'])
         self.display_current_room(self.data['mapping'],self.data['position'])
-        
+
+        if game_state == "VICTORY":
+                # si on gagne on dessine l'écran de victoire
+                self.draw_victory_screen()
         if game_state == "DRAWING_ROOM":
             self.draw_room_choice_screen() 
         

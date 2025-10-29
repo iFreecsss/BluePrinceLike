@@ -109,11 +109,12 @@ class Game:
             self.select_room_choice(self.current_choice_index)
 
     def handle_inputs(self, inputs):
+        self.sound_to_play = None
+
         #si le jeu est gagné ou perdu ya pas d'inputs
         if self.game_state in ["VICTORY", "GAME_OVER"]:
             return
         
-        self.sound_to_play = None
 
 
         if "TOGGLE_SETTINGS" in inputs:
