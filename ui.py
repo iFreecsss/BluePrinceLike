@@ -16,6 +16,18 @@ class UI:
         self.COLOR_PANEL_BORDER = (200, 220, 255)
         self.COLOR_PANEL_HIGHLIGHT = (255, 0, 0)
 
+        # initialisation du mixer pour les sons
+        pygame.mixer.init()
+        pygame.mixer.music.load('Sounds\\Mood\\29. Ovinn Nevarei.mp3') 
+        pygame.mixer.music.set_volume(0.4) # volume 40%
+        pygame.mixer.music.play(loops=-1) # boucle infinie
+        
+        self.new_room_sound = pygame.mixer.Sound('Sounds/Effects/door_opening.wav') 
+        self.new_room_sound.set_volume(0.7)
+        
+        self.footsteps_sound = pygame.mixer.Sound('Sounds/Effects/footsteps.wav') 
+        self.footsteps_sound.set_volume(0.7)
+
         #Définition des dimensions des différentes parties de l'UI
         self.MARGIN = 40
         self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT = 680,200
@@ -57,6 +69,10 @@ class UI:
         self.draw_room_rect.top = self.inventory_rect.bottom + self.MARGIN
 
         self.main_border_rect = pygame.Rect(20, 20, self.SCREEN_WIDTH - 40, self.SCREEN_HEIGHT - 40)
+
+    def play_door_sound(self):
+        if self.door_sound:
+            self.door_sound.play()
 
     def init_cell_Mapping(self):
         cell_mapping = np.empty((5,9), dtype=np.object_)
@@ -207,7 +223,14 @@ class UI:
 
     def set_data(self, data):
         self.data = data
+
+        sound_request = data.get('sound_to_play')
         
+        if sound_request == 'new_room' and self.new_room_sound:
+            self.new_room_sound.play()
+        elif sound_request == 'footsteps' and self.footsteps_sound:
+            self.footsteps_sound.play()
+
         new_message = self.data.get('warning_message')
         if new_message:
             self.message_text = new_message

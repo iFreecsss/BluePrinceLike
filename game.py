@@ -25,6 +25,8 @@ class Game:
         # mémorise la position où placer la pièce choisie
         self.pending_placement_position = None
 
+        self.sound_to_play = None
+
     def player_orientation(self, input):
         """
         Appel de fonction pour appeler une fontion dans player, pas ouf,
@@ -77,11 +79,13 @@ class Game:
             target_cell = self.map.get_current_mapping()[new_x, new_y]
 
             if target_cell is None:
+                self.sound_to_play = 'new_room'
                 # si la case adjacente est vide on peut lancer le tirage
                 self.game_state = "DRAWING_ROOM"
                 self.pending_placement_position = final_position
                 self.draw_new_rooms()
             else:
+                self.sound_to_play = 'footsteps'
                 # si elle est déjà occupée avec une pièce on avance normalement
                 self.player.move(final_position)
                 self.check_game_status() # on vérifie si on a gagné ou perdu
@@ -99,11 +103,12 @@ class Game:
             self.select_room_choice(self.current_choice_index)
 
     def handle_inputs(self, inputs):
-        
         #si le jeu est gagné ou perdu ya pas d'inputs
         if self.game_state in ["VICTORY", "GAME_OVER"]:
             return
         
+        self.sound_to_play = None
+
         if self.game_state == "EXPLORING":
             direction_change=["UP","DOWN","LEFT","RIGHT"]
             movement_confirmation = ["SPACE"]
@@ -137,6 +142,7 @@ class Game:
         self.data['current_choice_index'] = self.current_choice_index
         self.data['warning_message'] = self.warning_message
         self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
+        self.data['sound_to_play'] = self.sound_to_play
         return self.data
     
     def draw_new_rooms(self):
