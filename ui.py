@@ -397,7 +397,7 @@ class UI:
         if mouse_pressed and (self.effects_slider_rect.collidepoint(mouse_pos) or self.effects_square_rect.collidepoint(mouse_pos)):
             new_vol_percent = (mouse_pos[0] - self.effects_slider_rect.x) / self.effects_slider_rect.width
             new_vol = max(0.0, min(1.0, new_vol_percent))
-            inputs.append(("SET_effects_VOLUME", round(new_vol, 2)))
+            inputs.append(("SET_EFFECTS_VOLUME", round(new_vol, 2)))
 
         # Muter la musique ou les effets sonores
         label_mute_music = self.settings_font_small.render("Mute", True, self.COLOR_TEXT)
@@ -497,8 +497,9 @@ class UI:
             settings_inputs = self.draw_settings_menu(mouse_pos, mouse_pressed)
             inputs.extend(settings_inputs)
 
-        self.draw_warning_message()
-        self.display_Player(self.data['position'],self.data['direction'])
+        if game_state != "VICTORY":
+            self.draw_warning_message()
+            self.display_Player(self.data['position'],self.data['direction'])
 
         pygame.display.update()
         self.clock.tick(60)
