@@ -19,13 +19,19 @@ class Game:
         # il y aura 2 modes. celui qui permet de se déplcacer librement 'EXPLORING' et celui qui oblige
         #  à placer les pièces 'ROOM_DRAWING'
         self.game_state = 'EXPLORING'
+        self._previous_game_state = 'EXPLORING'
         # stocke les 3 pièces à choisir
         self.current_choice_index = 0
         self.room_choices = []
         # mémorise la position où placer la pièce choisie
         self.pending_placement_position = None
 
+        # params audio
         self.sound_to_play = None
+        self.music_volume = 0.4
+        self.effects_volume = 0.7
+        self.is_music_muted = False
+        self.is_effects_muted = False
 
     def player_orientation(self, input):
         """
@@ -109,6 +115,32 @@ class Game:
         
         self.sound_to_play = None
 
+
+        if "TOGGLE_SETTINGS" in inputs:
+            if self.game_state == "SETTINGS":
+                self.game_state = self._previous_game_state # Retour au jeu
+            else:
+                self._previous_game_state = self.game_state
+                self.game_state = "SETTINGS"
+            return
+
+        # Si on est en mode SETTINGS on utilise que les inputs de settings
+        if self.game_state == "SETTINGS":
+            for i in inputs:
+                if isinstance(i, tuple): # Les inputs de settings sont des tuples (command, value)
+                    command, value = i
+                    if command == "SET_MUSIC_VOLUME":
+                        self.music_volume = value
+                        self.is_music_muted = False
+                    elif command == "SET_EFFECTS_VOLUME":
+                        self.effects_volume = value
+                        self.is_effects_muted = False
+                    elif command == "TOGGLE_MUSIC_MUTE":
+                        self.is_music_muted = not self.is_music_muted
+                    elif command == "TOGGLE_EFFECTS_MUTE":
+                        self.is_effects_muted = not self.is_effects_muted
+            return
+
         if self.game_state == "EXPLORING":
             direction_change=["UP","DOWN","LEFT","RIGHT"]
             movement_confirmation = ["SPACE"]
@@ -142,7 +174,13 @@ class Game:
         self.data['current_choice_index'] = self.current_choice_index
         self.data['warning_message'] = self.warning_message
         self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
+
+        # données audio
         self.data['sound_to_play'] = self.sound_to_play
+        self.data['music_volume'] = self.music_volume
+        self.data['effects_volume'] = self.effects_volume
+        self.data['is_music_muted'] = self.is_music_muted
+        self.data['is_effects_muted'] = self.is_effects_muted
         return self.data
     
     def draw_new_rooms(self):
