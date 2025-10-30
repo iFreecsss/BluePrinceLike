@@ -12,11 +12,62 @@ class UI:
         #Dimensions de l'écran de jeu de Pygames et d'autres paramètres
         self.SCREEN_WIDTH = 1440    
         self.SCREEN_HEIGHT = 720
+        self.MARGIN = 40
+
+        #Initialisation des composants de l'UI à partir de fonctions dédiées
+        self.init_pygame()
+        self.init_colors_and_fonts()
+        self.init_sounds()
+        self.init_images()
+        self.create_layout()
+
+        #Définition de la carte
+        self.map = Map()
+        self.cell_mapping = self.init_cell_Mapping()
+
+        self.message_text = None
+        self.message_timer = 0
+        self.MESSAGE_DURATION = 1250
+
+    def init_pygame(self):
+        #Pygame window init
+        pygame.init()
+        pygame.mixer.init()
+
+        self.display_surface = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+        pygame.display.set_caption("GTAVI")
+        self.clock = pygame.time.Clock()
+
+    def init_colors_and_fonts(self):
+        #Initialisation des couleurs et polices
+        
+        # Jeu principal
         self.COLOR_BACKGROUND = (14, 38, 82)
         self.COLOR_GRID_LIGHT = (40, 90, 180)
+
         self.COLOR_PANEL_BORDER = (200, 220, 255)
         self.COLOR_PANEL_HIGHLIGHT = (255, 0, 0)
 
+        self.COLOR_TEXT = (255, 255, 255)
+        self.COLOR_MESSAGE_TEXT = (255, 220, 220) # Un blanc-cassé-rose
+
+        self.message_font = pygame.font.SysFont('Arial', 24, bold=True)
+        self.font = pygame.font.SysFont('Arial', 30)
+
+
+        # interface graphique pour le menu settings
+        self.settings_font_small = pygame.font.SysFont('Arial', 20)
+        self.settings_font_large = pygame.font.SysFont('Arial', 30, bold=True)
+
+        self.COLOR_PANEL_SETTINGS = (10, 20, 40, 230) # panneau transparent
+
+        self.COLOR_SLIDER_BG = (100, 100, 100) # fond des sliders
+        self.COLOR_square = (200, 220, 255) # carré des sliders
+
+        self.COLOR_CHECKBOX = (200, 220, 255) # contour des checkbox
+        self.COLOR_CHECKBOX_FILLED = (100, 180, 255) # intérieur des checkbox cochées
+
+    def init_sounds(self):
         # initialisation du mixer pour les sons
         pygame.mixer.init()
         pygame.mixer.music.load('Sounds\\Mood\\29. Ovinn Nevarei.mp3') 
@@ -24,34 +75,35 @@ class UI:
         pygame.mixer.music.play(loops=-1) # boucle infinie
         
         self.new_room_sound = pygame.mixer.Sound('Sounds/Effects/door_opening.wav') 
-        self.new_room_sound.set_volume(0.7)
+        self.new_room_sound.set_volume(0.4)
         
         self.footsteps_sound = pygame.mixer.Sound('Sounds/Effects/footsteps.wav') 
-        self.footsteps_sound.set_volume(0.7)
+        self.footsteps_sound.set_volume(0.4)
 
+    def init_images(self):
+        # icone restart
+        self.restart_icon = pygame.image.load('Images/Icons/restart_icon.png').convert_alpha()        
+        self.restart_icon = pygame.transform.scale(self.restart_icon, (50, 50))
+
+        # icone quit
+        self.quit_icon = pygame.image.load('Images/Icons/quit_icon.png').convert_alpha()
+        self.quit_icon = pygame.transform.scale(self.quit_icon, (50, 50))
+
+        # icone settings
+        self.settings_icon = pygame.image.load('Images/Icons/cog_icon.png').convert_alpha()
+        self.settings_icon = pygame.transform.scale(self.settings_icon, (50, 40))
+
+        # icone diamond 
+        self.diamond_icon = pygame.image.load('Images/Icons/diamond_icon.png').convert_alpha()
+        self.diamond_icon = pygame.transform.scale(self.diamond_icon, (25, 25))
+
+        # icone clé, pièce, pas à venir ...
+
+    def create_layout(self):
         #Définition des dimensions des différentes parties de l'UI
-        self.MARGIN = 40
         self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT = 680,200
         self.MAP_WIDTH, self.MAP_HEIGHT = 355, (self.SCREEN_HEIGHT - (2 * self.MARGIN))
         self.ACTION_MENU_WIDTH, self.ACTION_MENU_HEIGHT = 920, 400
-
-        #Définition de la carte
-        self.map = Map()
-        self.cell_mapping = self.init_cell_Mapping()
-
-        #Pygame window init
-        pygame.init()
-        self.display_surface = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        pygame.display.set_caption("CMI BluePrints")
-        self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont('Arial', 30)
-        self.COLOR_TEXT = (255, 255, 255)
-        
-        self.message_text = None
-        self.message_timer = 0
-        self.MESSAGE_DURATION = 1250
-        self.message_font = pygame.font.SysFont('Arial', 24, bold=True)
-        self.COLOR_MESSAGE_TEXT = (255, 220, 220) # Un blanc-cassé-rose
 
         self.main_view_rect = pygame.Rect(0, 0, self.MAP_WIDTH, self.MAP_HEIGHT)
         self.main_view_rect.left = self.MARGIN
@@ -71,27 +123,15 @@ class UI:
 
         self.main_border_rect = pygame.Rect(20, 20, self.SCREEN_WIDTH - 40, self.SCREEN_HEIGHT - 40)
 
-        # Affichage icone pour iventaire et cout des salles par exemple
-        self.diamond_icon = pygame.image.load('Images/Icons/diamond_icon.png').convert_alpha()
-        self.diamond_icon = pygame.transform.scale(self.diamond_icon, (25, 25))
-
         # Icône paramètres
-        # On le place dans la marge de droite
-        icon_x = self.SCREEN_WIDTH - self.MARGIN - 50 
-        # On le place dans la marge du haut
+        icon_x = self.SCREEN_WIDTH - self.MARGIN - 40
         icon_y = self.MARGIN 
+        
         self.settings_icon_rect = pygame.Rect(icon_x, icon_y, 50, 40)
 
-        # interface graphique pour le menu settings
-        self.settings_font_small = pygame.font.SysFont('Arial', 20)
-        self.settings_font_large = pygame.font.SysFont('Arial', 30, bold=True)
+        self.create_settings_layout()
 
-        self.COLOR_PANEL_SETTINGS = (10, 20, 40, 230) # panneau transparent
-        self.COLOR_SLIDER_BG = (100, 100, 100) # fond des sliders
-        self.COLOR_square = (200, 220, 255) # carré des sliders
-        self.COLOR_CHECKBOX = (200, 220, 255) # contour des checkbox
-        self.COLOR_CHECKBOX_FILLED = (100, 180, 255) # intérieur des checkbox cochées
-
+    def create_settings_layout(self):
         # Panneau principal
         panel_width, panel_height = 500, 400
         panel_x = (self.SCREEN_WIDTH - panel_width) // 2
@@ -113,18 +153,10 @@ class UI:
         self.music_mute_rect = pygame.Rect(panel_x + p + 120, panel_y + p + 190, 25, 25)
         self.effects_mute_rect = pygame.Rect(panel_x + p + 120, panel_y + p + 260, 25, 25)
 
-        # icones restart et quit
-        self.restart_icon = pygame.image.load('Images/Icons/restart_icon.png').convert_alpha()
-        self.quit_icon = pygame.image.load('Images/Icons/quit_icon.png').convert_alpha()
-        
-        self.restart_icon = pygame.transform.scale(self.restart_icon, (50, 50))
-        self.quit_icon = pygame.transform.scale(self.quit_icon, (50, 50))
-        self.settings_icon = pygame.image.load('Images/Icons/cog_icon.png').convert_alpha()
-
+        # Boutons restart et quit
         self.restart_button_rect = pygame.Rect(panel_x + p, panel_y + panel_height - p - 50, 50, 50)
         self.quit_button_rect = pygame.Rect(panel_x + panel_width - p - 50, panel_y + panel_height - p - 50, 50, 50)
-        self.settings_icon = pygame.transform.scale(self.settings_icon, (50, 40))
-
+    
     def play_door_sound(self):
         if self.door_sound:
             self.door_sound.play()
