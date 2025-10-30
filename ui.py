@@ -8,6 +8,7 @@ class UI:
     def __init__(self):
         #Données d'affichage
         self.data= {}
+
         #Dimensions de l'écran de jeu de Pygames et d'autres paramètres
         self.SCREEN_WIDTH = 1440    
         self.SCREEN_HEIGHT = 720
@@ -69,6 +70,10 @@ class UI:
         self.draw_room_rect.top = self.inventory_rect.bottom + self.MARGIN
 
         self.main_border_rect = pygame.Rect(20, 20, self.SCREEN_WIDTH - 40, self.SCREEN_HEIGHT - 40)
+
+        # Affichage icone pour iventaire et cout des salles par exemple
+        self.diamond_icon = pygame.image.load('Images/Icons/diamond_icon.png').convert_alpha()
+        self.diamond_icon = pygame.transform.scale(self.diamond_icon, (25, 25))
 
         # Icône paramètres
         # On le place dans la marge de droite
@@ -270,6 +275,25 @@ class UI:
             img_rotated = pygame.transform.rotate(img, rotation_angle)
             img_rect = img_rotated.get_rect(center=(choice_rect.centerx, choice_rect.centery)) # +30 pour descendre un peu
             self.display_surface.blit(img_rotated, img_rect) # on affiche les salles déjà tournées
+            
+            # Affichage du coût en diamond en bas du cadre
+            room_cost = room.cost
+            cost_text = self.font.render(str(room_cost), True, self.COLOR_TEXT)
+            
+            cost_y_pos = choice_rect.bottom + 20
+
+            total_width = cost_text.get_width() + 5 + self.diamond_icon.get_width()
+            
+            # Position x du texte (pour que l'ensemble soit centré)
+            cost_text_x = choice_rect.centerx - (total_width / 2)
+            cost_text_rect = cost_text.get_rect(left=cost_text_x, centery=cost_y_pos)
+            
+            # Position x de l'icône (juste après le texte)
+            diamond_icon_rect = self.diamond_icon.get_rect(left=cost_text_rect.right + 5, centery=cost_y_pos)
+
+            # Afficher le texte et l'icône
+            self.display_surface.blit(cost_text, cost_text_rect)
+            self.display_surface.blit(self.diamond_icon, diamond_icon_rect)
 
     def set_data(self, data):
         self.data = data
