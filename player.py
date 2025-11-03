@@ -1,3 +1,4 @@
+from inventory import *
 class Player:
     """
     Position (x,y) -> Position du joueur sur la carte,
@@ -18,7 +19,7 @@ class Player:
     def __init__(self):
         self.position = (2,8)
         self.direction = 0
-    
+        self.inventory = Inventory()
 
     def move(self,position):
         self.position = position
