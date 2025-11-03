@@ -3,6 +3,7 @@ from map import *
 from room import *
 from random_manager import * 
 from item import *
+
 class Game:
 
     def __init__(self):
@@ -13,14 +14,12 @@ class Game:
         self.warning_message = None
 
         self.player.inventory.add_item(
-            ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 10)
-        )
+            ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 10))
         self.player.inventory.add_item(
-            ConsumableItem("Key", "Images/Icons/key_icon.png") 
-        )
+            ConsumableItem("Key", "Images/Icons/key_icon.png", 15))
         self.player.inventory.add_item(
-            ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 70)
-        )
+            ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 70))
+        
         # les pioches se retrouvent ici
         self.random_manager = RandomManager()
 
@@ -29,11 +28,16 @@ class Game:
         #  à placer les pièces 'ROOM_DRAWING'
         self.game_state = 'EXPLORING'
         self._previous_game_state = 'EXPLORING'
+
         # stocke les 3 pièces à choisir
         self.current_choice_index = 0
         self.room_choices = []
+
         # mémorise la position où placer la pièce choisie
         self.pending_placement_position = None
+
+        # mémorise la direction par laquelle on entre
+        self.pending_entry_direction = None
 
         # params audio
         self.sound_to_play = None
@@ -71,8 +75,9 @@ class Game:
         if not current_room.has_exits(direction):
             self.warning_message = "Hey ! No door that way !"
             return
-
-        direction = self.player.direction
+        
+        # attention nécessaire de connaître la salle cible avant de vérifier la serrure
+        # afin de déverrouiller les deux côtés de la porte
         movement = (0,0)
         if direction == 0: # UP
             movement = (0,1)
@@ -89,25 +94,68 @@ class Game:
         MIN_X, MAX_X = 0, 4
         MIN_Y, MAX_Y = 0, 8
         
-        if (MIN_X <= new_x <= MAX_X) and (MIN_Y <= new_y <= MAX_Y): # Vérifie les limites de la map
+        target_room = None
 
-            target_cell = self.map.get_current_mapping()[new_x, new_y]
-
-            if target_cell is None:
-                self.sound_to_play = 'new_room'
-                # si la case adjacente est vide on peut lancer le tirage
-                self.game_state = "DRAWING_ROOM"
-                self.pending_placement_position = final_position
-                self.draw_new_rooms()
+        # On vérifie si la position cible est sur la carte
+        if (MIN_X <= new_x <= MAX_X) and (MIN_Y <= new_y <= MAX_Y):
+            # On récupère la salle cible (peut être None si la case est vide)
+            target_room = self.map.get_current_mapping()[final_position]
+        else:
+            # Le joueur essaie de se déplacer hors de la carte.
+            # has_exits devrait déjà bloquer ça, mais c'est une sécurité.
+            self.warning_message = "You can't go that way."
+            return
+        
+        # On vérifie le niveau de blocage de la porte dans cette direction
+        lock_level = current_room.get_lock_level(direction)
+        
+        if lock_level == 1:
+            # Porte fermée normale (Niveau 1)
+            # Si assez de clés
+            if self.player.inventory.use_consumable("Key", 1):
+                self.warning_message = "You used 1 key to unlock the door."
+                current_room.unlock_exit(direction)
+                if target_room is not None:
+                    opposite_direction = (direction + 2) % 4
+                    target_room.unlock_exit(opposite_direction)
             else:
-                self.sound_to_play = 'footsteps'
-                if self.player.inventory.use_consumable("Footsteps", 1):
-                    # si elle est déjà occupée avec une pièce on avance normalement
-                    self.player.move(final_position)
-                    self.check_game_status() # on vérifie si on a gagné ou perdu
-                else:
-                    # Si plus de pas faudra implémenter le game over
-                    self.warning_message = "GAME OVER !"
+                self.warning_message = "This door is locked. You need 1 key."
+                return # Bloqué
+        
+        elif lock_level == 2:
+            # Porte fermée double tours (Niveau 2)
+            if self.player.inventory.get_quantity("Key") >= 2:
+                self.player.inventory.use_consumable("Key", 2)
+                self.warning_message = "You used 2 keys to unlock the door."
+                current_room.unlock_exit(direction) # On déverrouille
+                if target_room is not None:
+                    opposite_direction = (direction + 2) % 4
+                    target_room.unlock_exit(opposite_direction)
+            else:
+                self.warning_message = "This door is double-locked. You need 2 keys."
+                return # Bloqué
+        
+        # Si on arrive ici, c'est que la porte était de niveau 0 ou vient d'être déverrouillée
+        
+        if target_room is None:
+            self.sound_to_play = 'new_room'
+            # si la case adjacente est vide on peut lancer le tirage
+            self.game_state = "DRAWING_ROOM"
+            self.pending_placement_position = final_position
+
+            # On mémorise la direction par laquelle le joueur va entrer
+            # (Si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce)
+            self.pending_entry_direction = (self.player.direction + 2) % 4
+            self.draw_new_rooms()
+        else:
+            self.sound_to_play = 'footsteps'
+            if self.player.inventory.use_consumable("Footsteps", 1):
+                # si elle est déjà occupée avec une pièce on avance normalement
+                self.player.move(final_position)
+                self.check_game_status() # on vérifie si on a gagné ou perdu
+            else:
+                # Si plus de pas faudra implémenter le game over
+                self.warning_message = "GAME OVER !"
 
     def handle_room_selection(self, input):
         """
@@ -198,9 +246,10 @@ class Game:
         return self.data
     
     def draw_new_rooms(self):
+            # on récupère la direction d'entrée mémorisée et on rappelle :
             # Calculer la direction par laquelle le joueur va entrer
             # (Si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce)
-            must_enter_direction = (self.player.direction + 2) % 4
+            must_enter_direction = self.pending_entry_direction
             
             # Utiliser le random_manager pour obtenir 3 pièces valides
             self.room_choices = self.random_manager.draw_placable_rooms(
@@ -238,7 +287,6 @@ class Game:
         room_cost = chosen_room.cost
         
         # On vérifie si le joueur a assez de diamants
-        # Note: J'utilise "Diamond" car c'est le nom que vous lui donnez dans __init__
         player_diamonds = self.player.inventory.get_quantity("Diamond")
         player_footsteps = self.player.inventory.get_quantity("Footsteps")
 
@@ -252,6 +300,11 @@ class Game:
             self.player.inventory.use_consumable("Diamond", room_cost)
             self.player.inventory.use_consumable("Footsteps", 1)
 
+            # On récupère la direction d'entrée mémorisée
+            entry_dir = self.pending_entry_direction
+            # On déverrouille cette porte sur la nouvelle pièce
+            chosen_room.unlock_exit(entry_dir)
+
             self.map.place_room(chosen_room, placement_pos)
             self.player.move(placement_pos)
             self.check_game_status()
@@ -262,7 +315,7 @@ class Game:
                 self.room_choices = []
                 self.pending_placement_position = None
         else:
-            # 4. Le joueur ne peut pas payer
+            # Le joueur ne peut pas payer
             self.warning_message = f"Not enough diamonds ! You need {room_cost - player_diamonds} more."
             # On ne change pas d'état, le joueur reste sur l'écran de choix
         
