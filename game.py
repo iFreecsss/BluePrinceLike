@@ -2,7 +2,7 @@ from player import *
 from map import *
 from room import *
 from random_manager import * 
-
+from item import *
 class Game:
 
     def __init__(self):
@@ -12,6 +12,15 @@ class Game:
         
         self.warning_message = None
 
+        self.player.inventory.add_item(
+            ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 10)
+        )
+        self.player.inventory.add_item(
+            ConsumableItem("Key", "Images/Icons/key_icon.png") 
+        )
+        self.player.inventory.add_item(
+            ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 70)
+        )
         # les pioches se retrouvent ici
         self.random_manager = RandomManager()
 
@@ -92,9 +101,13 @@ class Game:
                 self.draw_new_rooms()
             else:
                 self.sound_to_play = 'footsteps'
-                # si elle est déjà occupée avec une pièce on avance normalement
-                self.player.move(final_position)
-                self.check_game_status() # on vérifie si on a gagné ou perdu
+                if self.player.inventory.use_consumable("Footsteps", 1):
+                    # si elle est déjà occupée avec une pièce on avance normalement
+                    self.player.move(final_position)
+                    self.check_game_status() # on vérifie si on a gagné ou perdu
+                else:
+                    # Si plus de pas faudra implémenter le game over
+                    self.warning_message = "GAME OVER !"
 
     def handle_room_selection(self, input):
         """
@@ -175,7 +188,7 @@ class Game:
         self.data['current_choice_index'] = self.current_choice_index
         self.data['warning_message'] = self.warning_message
         self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
-
+        self.data['inventory_items'] = self.player.inventory.get_all_items()
         # données audio
         self.data['sound_to_play'] = self.sound_to_play
         self.data['music_volume'] = self.music_volume
@@ -222,16 +235,36 @@ class Game:
         
         chosen_room = self.room_choices[choice_index]
         placement_pos = self.pending_placement_position
+        room_cost = chosen_room.cost
         
-        self.map.place_room(chosen_room, placement_pos)
-        self.player.move(placement_pos)
-        self.check_game_status()
-        
-        if self.game_state != "VICTORY":
-            # réinitialse l'état du jeu par défaut
-            self.game_state = "EXPLORING"
-            self.room_choices = []
-            self.pending_placement_position = None
+        # On vérifie si le joueur a assez de diamants
+        # Note: J'utilise "Diamond" car c'est le nom que vous lui donnez dans __init__
+        player_diamonds = self.player.inventory.get_quantity("Diamond")
+        player_footsteps = self.player.inventory.get_quantity("Footsteps")
+
+        # si plus de pas game over 
+        if player_footsteps <= 0:
+            # faudra implementer le game over et donc le changement d'état de jeu ici aussi 
+            self.warning_message = "GAME OVER !"
+            return
+        if player_diamonds >= room_cost:
+            # Le joueur peut payer en diamants et en pas
+            self.player.inventory.use_consumable("Diamond", room_cost)
+            self.player.inventory.use_consumable("Footsteps", 1)
+
+            self.map.place_room(chosen_room, placement_pos)
+            self.player.move(placement_pos)
+            self.check_game_status()
+            
+            if self.game_state != "VICTORY":
+                # réinitialse l'état du jeu par défaut
+                self.game_state = "EXPLORING"
+                self.room_choices = []
+                self.pending_placement_position = None
+        else:
+            # 4. Le joueur ne peut pas payer
+            self.warning_message = f"Not enough diamonds ! You need {room_cost - player_diamonds} more."
+            # On ne change pas d'état, le joueur reste sur l'écran de choix
         
     def find_best_rotation(self, room, position, must_enter_direction):
         """
