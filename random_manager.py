@@ -8,6 +8,18 @@ RARITY_WEIGHTS = {
     'rare': 2
 }
 
+LOCK_PROB = {
+    # Facile 
+    7: (0.0, 0.20),  # 0% niv2, 20% niv1, 80% niv0
+    6: (0.05, 0.25), # 5% niv2, 25% niv1, 70% niv0
+    # Moyen
+    5: (0.10, 0.30), # 10% niv2, 30% niv1, 60% niv0
+    4: (0.15, 0.40), # 15% niv2, 40% niv1, 45% niv0
+    3: (0.25, 0.35), # 25% niv2, 35% niv1, 40% niv0
+    # Difficile
+    2: (0.40, 0.30), # 40% niv2, 30% niv1, 30% niv0
+    1: (0.50, 0.30)  # 50% niv2, 30% niv1, 20% niv0
+}
 class RandomManager:
     
     def __init__(self):
@@ -110,5 +122,46 @@ class RandomManager:
             
             # Mélange pour ne pas avoir la pièce gratuite toujours en première position
             random.shuffle(chosen_classes)
+        pos_x, pos_y = position 
+        
+        chosen_instances = []
+        for RoomClass in chosen_classes:
+            instance = RoomClass()
+            # On assigne les blocages en fonction de la ligne (pos_y)
+            self.assign_locks_to_room(instance, pos_y)
+            chosen_instances.append(instance)
+            
+        return chosen_instances
 
-        return [RoomClass() for RoomClass in chosen_classes]
+    def calculate_lock_level(self, y_coordinate):
+        """
+        Calcule le niveau de blocage (0, 1, ou 2)
+        basé sur la ligne (y) de la carte.
+        """
+        # 1ère ligne -> niveau 0
+        if y_coordinate == 8:
+            return 0
+        
+        # Dernière -> niveau 2
+        if y_coordinate == 0:
+            return 2
+        
+        # Lignes 1 à 7 -> probabilités croissantes
+        prob_level_2, prob_level_1 = LOCK_PROB.get(y_coordinate, (0.0, 0.0))
+        
+        roll = random.random() # Un float entre 0 et 1
+        
+        if roll < prob_level_2:
+            return 2 # Fermé à double tour
+        elif roll < (prob_level_2 + prob_level_1):
+            return 1 # Fermé à clé
+        else:
+            return 0 # Ouvert
+        
+    def assign_locks_to_room(self, room_instance, y_coordinate):
+        """
+        Applique les niveaux de blocage à toutes les sorties de base d'une instance de salle.
+        """
+        for base_direction in room_instance.base_exits:
+            lock_level = self.calculate_lock_level(y_coordinate)
+            room_instance.set_exit_lock(base_direction, lock_level)

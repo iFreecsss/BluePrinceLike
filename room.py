@@ -13,6 +13,7 @@ class RoomObject:
         self.base_exits = base_exits
         # NORD: 0; OUEST: 1; SUD: 2; EST: 3
         self.orientation = 0
+        self.exit_locks = {}
 
     def has_exits(self, direction):
 
@@ -31,6 +32,47 @@ class RoomObject:
         # définition de l'orientation de la salle
         self.orientation = rotation % 4
 
+    def set_exit_lock(self, base_direction, lock_level):
+        """
+        Appelé par le RandomManager pour définir le blocage initial
+        d'une sortie de base (avant rotation).
+        """
+        if base_direction in self.base_exits:
+            self.exit_locks[base_direction] = lock_level
+
+    def get_original_direction(self, rotated_direction):
+        """Fonction utilisée pour retrouver la direction originale 
+        d'une sortie après rotation de la salle.
+        Exemple: si la salle est tournée de 1 (90° horaire),
+        une sortie "NORD" (0) devient "EST" (3). Pour retrouver
+        la direction originale, on doit tourner 1 fois à gauche (270°).
+        """
+        MAP_TURN_RIGHT = { 0: 3, 1: 0, 2: 1, 3: 2 }
+        original_direction = rotated_direction
+
+        for _ in range(self.orientation):
+            original_direction = MAP_TURN_RIGHT[original_direction]
+        return original_direction
+    
+    def get_lock_level(self, direction):
+        """
+        Récupère le niveau de blocage pour une direction après rotation
+        """
+        original_direction = self.get_original_direction(direction)
+            
+        # Renvoie le niveau de blocage (0 par défaut si non défini)
+        return self.exit_locks.get(original_direction, 0)
+    
+    def unlock_exit(self, direction):
+        """
+        Déverrouille à jamais une porte (met son niveau à 0) pour une direction après rotation
+        """
+        original_direction = self.get_original_direction(direction)
+        
+        if original_direction in self.exit_locks:
+            self.exit_locks[original_direction] = 0
+            return True
+        return False
 
 class EntryHall(RoomObject):
     rarity = 'common' 
