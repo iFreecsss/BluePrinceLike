@@ -10,7 +10,6 @@ while(True):
     inputs = game_interface.run()
 
     if "RESTART_GAME" in inputs:
-        print("--- RESTARTING GAME ---")
         game_logic = Game()
         game_interface = UI()
         continue
