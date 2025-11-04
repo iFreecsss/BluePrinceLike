@@ -19,6 +19,8 @@ class Game:
             ConsumableItem("Key", "Images/Icons/key_icon.png", 15))
         self.player.inventory.add_item(
             ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 70))
+        self.player.inventory.add_item(
+            ConsumableItem("Dice", "Images/Icons/dice_icon.png", 5))
         
         # les pioches se retrouvent ici
         self.random_manager = RandomManager()
@@ -220,6 +222,19 @@ class Game:
                 if i in ["LEFT_ROOM", "RIGHT_ROOM", "ENTER"]:
                     self.handle_room_selection(i)
                     break
+                elif i == "REROLL":
+                    self.handle_reroll()
+                    break
+
+    def handle_reroll(self):
+        """Tente de relancer le tirage des pièces en utilisant un dé"""
+
+        if self.player.inventory.use_consumable("Dice", 1):
+            self.warning_message = "You used 1 Dice to reroll room choices."
+            self.sound_to_play = 'reroll'
+            self.draw_new_rooms()
+        else:
+            self.warning_message = "You don't have any Dice to reroll."
 
     def publish_data(self):
         """
@@ -237,6 +252,7 @@ class Game:
         self.data['warning_message'] = self.warning_message
         self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
         self.data['inventory_items'] = self.player.inventory.get_all_items()
+        
         # données audio
         self.data['sound_to_play'] = self.sound_to_play
         self.data['music_volume'] = self.music_volume

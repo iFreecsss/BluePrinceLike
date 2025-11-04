@@ -86,6 +86,9 @@ class UI:
         self.footsteps_sound = pygame.mixer.Sound('Sounds/Effects/footsteps.wav') 
         self.footsteps_sound.set_volume(0.4)
 
+        self.dice_sound = pygame.mixer.Sound('Sounds/Effects/dice.wav')
+        self.dice_sound.set_volume(0.4)
+
     def init_images(self):
         # icone restart
         self.restart_icon = pygame.image.load('Images/Icons/restart_icon.png').convert_alpha()        
@@ -102,6 +105,10 @@ class UI:
         # icone diamond 
         self.diamond_icon = pygame.image.load('Images/Icons/diamond_icon.png').convert_alpha()
         self.diamond_icon = pygame.transform.scale(self.diamond_icon, (25, 25))
+
+        # icone dice
+        self.dice_icon = pygame.image.load('Images/Icons/dice_icon.png').convert_alpha()
+        self.dice_icon = pygame.transform.scale(self.dice_icon, (40, 40))
 
         # icone clé, pièce, pas à venir ...
         self.item_icon_cache = {}
@@ -163,10 +170,6 @@ class UI:
         # Boutons restart et quit
         self.restart_button_rect = pygame.Rect(panel_x + p, panel_y + panel_height - p - 50, 50, 50)
         self.quit_button_rect = pygame.Rect(panel_x + panel_width - p - 50, panel_y + panel_height - p - 50, 50, 50)
-    
-    def play_door_sound(self):
-        if self.door_sound:
-            self.door_sound.play()
 
     def init_cell_Mapping(self):
         cell_mapping = np.empty((5,9), dtype=np.object_)
@@ -334,16 +337,27 @@ class UI:
             self.display_surface.blit(cost_text, cost_text_rect)
             self.display_surface.blit(self.diamond_icon, diamond_icon_rect)
 
+            # Afficahge de l'isntruction de reroll seulement si on a des dés
+            
+            dice_icon_rect = self.dice_icon.get_rect(centery=title_rect.centery, right=panel.right - self.MARGIN)
+            reroll_text_surface = self.inventory_font_small.render("Reroll (R)", True, self.COLOR_TEXT)
+            reroll_text_rect = reroll_text_surface.get_rect(centery=dice_icon_rect.centery, right=dice_icon_rect.left - 10)
+
+            self.display_surface.blit(self.dice_icon, dice_icon_rect)
+            self.display_surface.blit(reroll_text_surface, reroll_text_rect)
+
     def set_data(self, data):
         self.data = data
 
         # gestion des sons
         sound_request = data.get('sound_to_play')
         
-        if sound_request == 'new_room' and self.new_room_sound:
+        if sound_request == 'new_room':
             self.new_room_sound.play()
-        elif sound_request == 'footsteps' and self.footsteps_sound:
+        elif sound_request == 'footsteps':
             self.footsteps_sound.play()
+        elif sound_request == 'reroll':
+            self.dice_sound.play()
         
         music_vol = self.data.get('music_volume', 0.4)
         effects_vol = self.data.get('effects_volume', 0.7)
@@ -509,7 +523,7 @@ class UI:
             self.display_surface.blit(self.quit_icon, self.quit_button_rect)
         return inputs
 
-    def run(self):  
+    def run(self):
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
         inputs = []
         
@@ -554,6 +568,8 @@ class UI:
                         inputs.append("RIGHT_ROOM")
                     elif event.key == pygame.K_RETURN: 
                         inputs.append("ENTER")
+                    elif event.key == pygame.K_r:
+                        inputs.append("REROLL")
             
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 
@@ -608,7 +624,6 @@ class UI:
         self.clock.tick(60)
         return inputs
     
-
     def draw_inventory(self):
         """Dessine le contenu de l'inventaire dans le panneau self.inventory_rect."""
         
