@@ -523,6 +523,70 @@ class UI:
             self.display_surface.blit(self.quit_icon, self.quit_button_rect)
         return inputs
 
+    def draw_inventory(self):
+        """Dessine le contenu de l'inventaire dans le panneau self.inventory_rect."""
+        
+        panel_rect = self.inventory_rect
+        
+        # Titre du panneau
+        title_text = self.inventory_font_large.render("Inventory", True, self.COLOR_TEXT)
+        title_rect = title_text.get_rect(midtop=(panel_rect.centerx, panel_rect.top + 15))
+        self.display_surface.blit(title_text, title_rect)
+        
+        # Récupération des objets à afficher
+        items = self.data.get('inventory_items', [])
+            
+        # Affichage des icônes des objets à changer car ne marche pas pour toutes les images
+        icon_size = 50
+        padding = 40
+        
+        # on place les icônes en partant d'une position de départ du rectangle de l'inventaire en ajoutant le padding
+        start_x = panel_rect.left + padding
+        start_y = panel_rect.top + 2*padding
+        
+        current_x = start_x
+        current_y = start_y
+
+        for item in items:
+            # Charger l'icône si elle n'est pas déjà en cache
+            # (on évite de recharger l'image à chaque frame pour les performances)
+            if item.image_path not in self.item_icon_cache:
+                icon = pygame.image.load(item.image_path).convert_alpha()
+                icon = pygame.transform.scale(icon, (icon_size, icon_size))
+                self.item_icon_cache[item.image_path] = icon
+            
+            # récupérer l'icône depuis le cache soit qu'on vient de charger soit qu'elle y était déjà
+            icon = self.item_icon_cache[item.image_path]
+            icon_rect = icon.get_rect(topleft=(current_x, current_y))
+            
+            # Dessine l'icône
+            self.display_surface.blit(icon, icon_rect)
+            
+            # Si c'est un consommable => affiche la quantité
+            if isinstance(item, ConsumableItem):
+                qty_text = self.inventory_item_font.render(str(item.quantity), True, self.COLOR_TEXT)
+                # Fond sombre un peu transparent 
+                qty_bg_rect = pygame.Rect(icon_rect.right - qty_text.get_width() - 5, 
+                                          icon_rect.bottom - qty_text.get_height() - 2,
+                                          qty_text.get_width() + 4,
+                                          qty_text.get_height() + 2)
+                
+
+                bg_surface = pygame.Surface(qty_bg_rect.size, pygame.SRCALPHA)
+                bg_surface.fill((0, 0, 0, 150))
+                self.display_surface.blit(bg_surface, qty_bg_rect.topleft)
+                
+                # Texte de quantité
+                qty_rect = qty_text.get_rect(bottomright=(icon_rect.right - 3, icon_rect.bottom - 3))
+                self.display_surface.blit(qty_text, qty_rect)
+
+            # Passe à l'objet suivant dans l'inventaire
+            current_x += icon_size + padding
+            if current_x + icon_size > panel_rect.right - padding:
+                # Ligne suivante
+                current_x = start_x
+                current_y += icon_size + padding
+
     def run(self):
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
         inputs = []
@@ -595,7 +659,7 @@ class UI:
         self.draw_elements()
         self.display_MAP(self.data['mapping'])
         self.display_current_room(self.data['mapping'],self.data['position'])
-
+        self.draw_inventory()
             
         if game_state == "VICTORY":
                 # si on gagne on dessine l'écran de victoire
@@ -612,8 +676,6 @@ class UI:
             settings_inputs = self.draw_settings_menu(mouse_pos, mouse_pressed)
             inputs.extend(settings_inputs)
 
-        self.draw_inventory()
-
         self.display_surface.blit(self.settings_icon, self.settings_icon_rect)
 
         if game_state != "VICTORY":
@@ -623,67 +685,4 @@ class UI:
         pygame.display.update()
         self.clock.tick(60)
         return inputs
-    
-    def draw_inventory(self):
-        """Dessine le contenu de l'inventaire dans le panneau self.inventory_rect."""
-        
-        panel_rect = self.inventory_rect
-        
-        # Titre du panneau
-        title_text = self.inventory_font_large.render("Inventory", True, self.COLOR_TEXT)
-        title_rect = title_text.get_rect(midtop=(panel_rect.centerx, panel_rect.top + 15))
-        self.display_surface.blit(title_text, title_rect)
-        
-        # Récupération des objets à afficher
-        items = self.data.get('inventory_items', [])
-            
-        # Affichage des icônes des objets à changer car ne marche pas pour toutes les images
-        icon_size = 50
-        padding = 40
-        
-        # on place les icônes en partant d'une position de départ du rectangle de l'inventaire en ajoutant le padding
-        start_x = panel_rect.left + padding
-        start_y = panel_rect.top + 2*padding
-        
-        current_x = start_x
-        current_y = start_y
 
-        for item in items:
-            # Charger l'icône si elle n'est pas déjà en cache
-            # (on évite de recharger l'image à chaque frame pour les performances)
-            if item.image_path not in self.item_icon_cache:
-                icon = pygame.image.load(item.image_path).convert_alpha()
-                icon = pygame.transform.scale(icon, (icon_size, icon_size))
-                self.item_icon_cache[item.image_path] = icon
-            
-            # récupérer l'icône depuis le cache soit qu'on vient de charger soit qu'elle y était déjà
-            icon = self.item_icon_cache[item.image_path]
-            icon_rect = icon.get_rect(topleft=(current_x, current_y))
-            
-            # Dessine l'icône
-            self.display_surface.blit(icon, icon_rect)
-            
-            # Si c'est un consommable => affiche la quantité
-            if isinstance(item, ConsumableItem):
-                qty_text = self.inventory_item_font.render(str(item.quantity), True, self.COLOR_TEXT)
-                # Fond sombre un peu transparent 
-                qty_bg_rect = pygame.Rect(icon_rect.right - qty_text.get_width() - 5, 
-                                          icon_rect.bottom - qty_text.get_height() - 2,
-                                          qty_text.get_width() + 4,
-                                          qty_text.get_height() + 2)
-                
-
-                bg_surface = pygame.Surface(qty_bg_rect.size, pygame.SRCALPHA)
-                bg_surface.fill((0, 0, 0, 150))
-                self.display_surface.blit(bg_surface, qty_bg_rect.topleft)
-                
-                # Texte de quantité
-                qty_rect = qty_text.get_rect(bottomright=(icon_rect.right - 3, icon_rect.bottom - 3))
-                self.display_surface.blit(qty_text, qty_rect)
-
-            # Passe à l'objet suivant dans l'inventaire
-            current_x += icon_size + padding
-            if current_x + icon_size > panel_rect.right - padding:
-                # Ligne suivante
-                current_x = start_x
-                current_y += icon_size + padding
