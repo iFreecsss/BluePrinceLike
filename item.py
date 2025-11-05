@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import random
 
 class Item(ABC):
     """
@@ -54,3 +55,87 @@ class NonConsumableItem(Item):
         # La logique de ce qui se passe (ex: ouvrir une porte)
         # serait gérée dans game_logic, appelée depuis handle_inputs
         pass
+
+class FloorItem(ABC):
+    """
+    Classe de base abstraite pour les objets placés sur le sol dans le jeu.
+    """
+    def __init__(self, name, image_path):
+        self.name = name  # Position sous forme de tuple (x, y)
+        self.image_path = image_path
+
+    @abstractmethod
+    def collect(self, game_logic):
+        """
+        logique pour collecter l'objet du sol soit pour qu'il s'ajoute à l'inventaire du joueur soit 
+        pour déclencher une action spécifique dans le jeu.
+        """
+        pass
+
+class Apple(FloorItem):
+    """
+    Un objet pomme placé sur le sol que le joueur peut collecter.
+    """
+    def __init__(self):
+        super().__init__("Apple", "Images/Icons/apple_icon.png")
+
+    def collect(self, game_logic):
+        """
+        Ajoute 2 pas à l'inventaire du joueur lorsqu'il collecte la pomme.
+        """
+        game_logic.player.inventory.add_item(ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 2))
+
+class Banana(FloorItem):
+    """
+    Un objet banane placé sur le sol que le joueur peut collecter.
+    """
+    def __init__(self):
+        super().__init__("Banana", "Images/Icons/banana_icon.png")
+
+    def collect(self, game_logic):
+        """
+        Ajoute 3 pas à l'inventaire du joueur lorsqu'il collecte la banane.
+        """
+        game_logic.player.inventory.add_item(ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 3))
+
+class Diamond(FloorItem):
+    """
+    Un objet diamant placé sur le sol que le joueur peut collecter.
+    """
+    def __init__(self, quantity=1):
+        self.quantity = quantity
+        super().__init__("Diamond", "Images/Icons/diamond_icon.png")
+
+    def collect(self, game_logic):
+        """
+        Ajoute 5 pièces à l'inventaire du joueur lorsqu'il collecte le diamant.
+        """
+        game_logic.player.inventory.add_item(ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", self.quantity))
+
+class Key(FloorItem):
+    """
+    Un objet clé placé sur le sol que le joueur peut collecter.
+    """
+    def __init__(self, quantity=1):
+        self.quantity = quantity
+        super().__init__("Key", "Images/Icons/key_icon.png")
+
+    def collect(self, game_logic):
+        """
+        Ajoute une clé unique à l'inventaire du joueur lorsqu'il collecte la clé.
+        """
+        game_logic.player.inventory.add_item(ConsumableItem("Key", "Images/Icons/key_icon.png", self.quantity))
+
+class Dice(FloorItem):
+    """
+    Un objet dé placé sur le sol que le joueur peut collecter.
+    """
+    def __init__(self, quantity=1):
+        self.quantity = quantity
+        super().__init__("Dice", "Images/Icons/dice_icon.png")
+
+    def collect(self, game_logic):
+        """
+        Ajoute un dé unique à l'inventaire du joueur lorsqu'il collecte le dé.
+        """
+        game_logic.player.inventory.add_item(ConsumableItem("Dice", "Images/Icons/dice_icon.png", self.quantity))
