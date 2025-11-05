@@ -1,4 +1,5 @@
 from inventory import *
+
 class Player:
     """
     Position (x,y) -> Position du joueur sur la carte,
