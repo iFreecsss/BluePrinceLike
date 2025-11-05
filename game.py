@@ -41,6 +41,9 @@ class Game:
         # mémorise la direction par laquelle on entre
         self.pending_entry_direction = None
 
+        # pour la gestion des items au sol
+        self.current_floor_item_index = 0
+
         # params audio
         self.sound_to_play = None
         self.music_volume = 0.4
@@ -226,6 +229,49 @@ class Game:
                     self.handle_reroll()
                     break
 
+        elif self.game_state == "COLLECTING_ITEMS":
+            current_room = self.map.get_current_mapping()[self.player.position]
+            items_on_floor = current_room.get_items_on_floor()
+
+            # si on est dans cet état mais qu'il n'y a pas d'objets, on sort
+            if not items_on_floor:
+                self.game_state = "EXPLORING"
+                return
+
+            num_items = len(items_on_floor)
+
+            for i in inputs:
+                if i == "LEFT_ROOM":
+                    self.current_floor_item_index = (self.current_floor_item_index - 1) % num_items
+                elif i == "RIGHT_ROOM":
+                    self.current_floor_item_index = (self.current_floor_item_index + 1) % num_items
+                elif i == "ENTER":
+                    # Retirer l'objet de la liste de la salle
+                    # pop() le récupère ET le supprime de la liste en même temps
+                    item_to_collect = items_on_floor.pop(self.current_floor_item_index)
+                    
+                    # Appliquer son effet
+                    item_to_collect.collect(self)
+                    
+                    # Afficher le message de collecte
+                    item_name = item_to_collect.name
+                    if hasattr(item_to_collect, 'quantity') and item_to_collect.quantity > 1:
+                        item_name = f"{item_to_collect.quantity} {item_to_collect.name}(s)"
+                    elif item_to_collect.name in ["Apple", "Banana"]:
+                         item_name = f"1 {item_to_collect.name}"
+                    self.warning_message = f"You collected {item_name}!"
+                    
+                    # Vérifier s'il reste des objets
+                    if not items_on_floor:
+                        # S'il n'y en a plus retour à l'exploration
+                        self.game_state = "EXPLORING"
+                    else:
+                        # S'il en reste on doit ajuster l'index
+                        self.current_floor_item_index = min(self.current_floor_item_index, len(items_on_floor) - 1)
+                    
+                    # On arrête de traiter les inputs pour ce frame
+                    break
+
     def handle_reroll(self):
         """Tente de relancer le tirage des pièces en utilisant un dé"""
 
@@ -253,6 +299,12 @@ class Game:
         self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
         self.data['inventory_items'] = self.player.inventory.get_all_items()
         
+        # items au sol dans la salle actuelle
+        self.data['items_on_floor'] = []
+        if self.data['game_state'] == "COLLECTING_ITEMS":
+            current_room = self.map.get_current_mapping()[self.player.position]
+            self.data['items_on_floor'] = current_room.get_items_on_floor()
+            self.data['current_floor_item_index'] = self.current_floor_item_index
         # données audio
         self.data['sound_to_play'] = self.sound_to_play
         self.data['music_volume'] = self.music_volume
@@ -326,15 +378,32 @@ class Game:
             self.check_game_status()
             
             if self.game_state != "VICTORY":
-                # réinitialse l'état du jeu par défaut
-                self.game_state = "EXPLORING"
+                self.check_for_room_items(chosen_room)
+                if self.game_state != "COLLECTING_ITEMS":
+                    # Si on n'est pas passé en mode collecte d'items
+
+                    # réinitialse l'état du jeu par défaut
+                    self.game_state = "EXPLORING"
                 self.room_choices = []
                 self.pending_placement_position = None
         else:
             # Le joueur ne peut pas payer
             self.warning_message = f"Not enough diamonds ! You need {room_cost - player_diamonds} more."
             # On ne change pas d'état, le joueur reste sur l'écran de choix
-        
+
+    def check_for_room_items(self, room):
+        """
+        Vérifie si la salle contient des objets au sol.
+        Si oui, change l'état du jeu en mode collecte d'objets.
+        """
+        if room.name in ["Entrance_Hall", "AnteChamber"]:
+            # Ces salles ne contiennent pas d'objets
+            return
+        if room.get_items_on_floor():
+            # True si la salle contient des objets au sol
+            self.game_state = "COLLECTING_ITEMS"
+            self.current_floor_item_index = 0
+    
     def find_best_rotation(self, room, position, must_enter_direction):
         """
         Trouve la meilleure rotation pour une pièce.
