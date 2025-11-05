@@ -1,5 +1,6 @@
 import random
 from room import *
+from item import *
 
 # Définition des poids pour les raretés
 RARITY_WEIGHTS = {
@@ -30,6 +31,18 @@ class RandomManager:
             Coat_Check, Conference_Room, Parlor, Security, 
             Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom
         ]
+        self.item_spawn_chance = 0.6
+
+        self.floor_items = [
+            (Apple, 20),
+            (Banana, 15),
+            (Diamond, 10),
+            (Key, 5),
+            (Dice, 5)
+        ]
+
+        self.items_classes = [item[0] for item in self.floor_items]
+        self.items_weights = [item[1] for item in self.floor_items]
         
     def is_room_placable(self, RoomClass, current_map, position, direction_of_entry):
         """
@@ -125,8 +138,26 @@ class RandomManager:
         pos_x, pos_y = position 
         
         chosen_instances = []
+
         for RoomClass in chosen_classes:
             instance = RoomClass()
+
+            if random.random() < self.item_spawn_chance:
+                num_items_to_spawn = random.choices([2,3,4], weights=[50,30,20], k=1)[0]
+
+                for _ in range(num_items_to_spawn):
+                    # Tirage d'un objet à faire apparaître au sol
+                    item_class_to_spawn = random.choices(
+                        self.items_classes,
+                        weights=self.items_weights,
+                        k=1
+                    )[0]
+                    item_instance = item_class_to_spawn()
+
+                    if isinstance(item_instance, (Diamond, Key, Dice)):
+                        item_instance.quantity = random.choices([1,2,5], weights=[74,25,1], k=1)[0]
+                    instance.add_item_to_floor(item_instance)
+                    
             # On assigne les blocages en fonction de la ligne (pos_y)
             self.assign_locks_to_room(instance, pos_y)
             chosen_instances.append(instance)
