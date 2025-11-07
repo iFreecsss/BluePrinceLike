@@ -29,7 +29,8 @@ class RandomManager:
             Aquarium, Attic, Ballroom, Billiard_Room, 
             Boiler_Room, Chamber_of_Mirrors, Closet, 
             Coat_Check, Conference_Room, Parlor, Security, 
-            Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom
+            Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
+            Bedroom, Chapel
         ]
         self.item_spawn_chance = 0.6
 
