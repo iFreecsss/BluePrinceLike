@@ -160,6 +160,10 @@ class Game:
             if self.player.inventory.use_consumable("Footsteps", 1):
                 # si elle est déjà occupée avec une pièce on avance normalement
                 self.player.move(final_position)
+                
+                new_room = self.map.get_current_mapping()[self.player.position] # la salle où on vient d'arriver
+                new_room.on_entry(self) # On déclenche son effet d'entrée (self = game_logic)
+                
                 self.check_game_status() # on vérifie si on a gagné ou perdu
             else:
                 # Si plus de pas faudra implémenter le game over
@@ -378,6 +382,10 @@ class Game:
 
             self.map.place_room(chosen_room, placement_pos)
             self.player.move(placement_pos)
+            
+            # On déclenche l'effet d'entrée de la pièce qu'on vient de placer
+            chosen_room.on_entry(self)
+            
             self.check_game_status()
             
             if self.game_state != "VICTORY":
