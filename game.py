@@ -21,6 +21,9 @@ class Game:
             ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 70))
         self.player.inventory.add_item(
             ConsumableItem("Dice", "Images/Icons/dice_icon.png", 5))
+        self.player.inventory.add_item(
+            ConsumableItem("Coin", "Images/Icons/coin_icon.png", 20))
+        
         
         # les pioches se retrouvent ici
         self.random_manager = RandomManager()
