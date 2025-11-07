@@ -1,3 +1,5 @@
+from item import ConsumableItem
+
 class RoomObject:
     """
     Room class, inheritance only, helps stock all rooms as needed
@@ -92,19 +94,21 @@ class RoomObject:
         Vide la liste des objets au sol dans la salle.
         """
         self.items_on_floor = []
+    
+    def on_entry(self, game_logic):
+        """
+        Applique un effet spécial lorsque le joueur entre dans la pièce.
+        'game_logic' est l'instance principale de la classe Game.
+        Par défaut, ne fait rien.
+        """
+        pass
 
 class EntryHall(RoomObject):
     rarity = 'common' 
     cost = 0
     def __init__(self):
         super().__init__("Entrance Hall", "Images/Rooms/Entrance_Hall.png", base_exits=[0,1,3])
-    
-class Parlor(RoomObject):
-    rarity = 'common'
-    cost = 0
-    def __init__(self):
-        super().__init__("Parlor", "Images/Rooms/Parlor.png", base_exits=[1,2])
-    
+
 class AnteChamber(RoomObject):
     rarity = 'common' 
     cost = 0
@@ -134,6 +138,15 @@ class Bedroom(RoomObject):
     cost = 0
     def __init__(self):
         super().__init__("Ballroom", "Images/Bedrooms/Bedroom.png", base_exits=[1,2])
+        
+    def on_entry(self, game_logic):
+        """
+        Donne +2 Pas (Footsteps) au joueur lorsqu'il entre.
+        """
+        game_logic.player.inventory.add_item(
+            ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 2)
+        )
+        game_logic.warning_message = "You feel rested : +2 Footsteps!"
 
 class Billiard_Room(RoomObject):
     rarity = 'common'
@@ -176,6 +189,16 @@ class Chapel(RoomObject):
     cost = 0
     def __init__(self):
         super().__init__("Conference_Room", "Images/Red Rooms/Chapel.png", base_exits=[1,2,3])
+    
+    def on_entry(self, game_logic):
+        """
+        Retire 1 Pièce (Coin) au joueur s'il en a.
+        """
+        if game_logic.player.inventory.use_consumable("Coin", 1):
+            game_logic.warning_message = "You pay tribute : -1 Coin."
+        else:
+            # L'effet s'active mais le joueur ne peut pas payer
+            game_logic.warning_message = "Chapel demands tribute but you're poor."
 
 
 class Dining_Room(RoomObject):
@@ -201,6 +224,12 @@ class Master_Bedroom(RoomObject):
     cost = 2
     def __init__(self):
         super().__init__("Master_Bedroom", "Images/Bedrooms/Master_Bedroom.png", base_exits=[2])
+
+class Parlor(RoomObject):
+    rarity = 'common'
+    cost = 0
+    def __init__(self):
+        super().__init__("Parlor", "Images/Rooms/Parlor.png", base_exits=[1,2])
 
 class Passageway(RoomObject):
     rarity = 'common'
