@@ -373,6 +373,10 @@ class Game:
         if player_diamonds >= room_cost:
             # Le joueur peut payer en diamants et en pas
             self.player.inventory.use_consumable("Diamond", room_cost)
+            
+            # On applique l'effet "on_draft" AVANT de payer le pas
+            chosen_room.on_draft(self)
+            
             self.player.inventory.use_consumable("Footsteps", 1)
 
             # On récupère la direction d'entrée mémorisée
