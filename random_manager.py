@@ -30,7 +30,7 @@ class RandomManager:
             Boiler_Room, Chamber_of_Mirrors, Closet, 
             Coat_Check, Conference_Room, Parlor, Security, 
             Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
-            Bedroom, Chapel
+            Bedroom, Chapel, Weight_Room
         ]
         self.item_spawn_chance = 0.6
 
