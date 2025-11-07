@@ -129,6 +129,12 @@ class Ballroom(RoomObject):
     def __init__(self):
         super().__init__("Ballroom", "Images/Rooms/Ballroom.png", base_exits=[0,2])
 
+class Bedroom(RoomObject):
+    rarity = 'common'
+    cost = 0
+    def __init__(self):
+        super().__init__("Ballroom", "Images/Bedrooms/Bedroom.png", base_exits=[1,2])
+
 class Billiard_Room(RoomObject):
     rarity = 'common'
     cost = 0
@@ -165,6 +171,12 @@ class Conference_Room(RoomObject):
     def __init__(self):
         super().__init__("Conference_Room", "Images/Rooms/Conference_Room.png", base_exits=[1,2,3])
 
+class Chapel(RoomObject):
+    rarity = 'common'
+    cost = 0
+    def __init__(self):
+        super().__init__("Conference_Room", "Images/Red Rooms/Chapel.png", base_exits=[1,2,3])
+
 
 class Dining_Room(RoomObject):
     rarity = 'common'
@@ -172,11 +184,11 @@ class Dining_Room(RoomObject):
     def __init__(self):
         super().__init__("Dining_Room", "Images/Rooms/Dining_Room.png", base_exits=[1,2,3])
 
-class Security(RoomObject):
-    rarity = 'rare'
-    cost = 1
+class Foyer(RoomObject):
+    rarity = 'uncommon'
+    cost = 2
     def __init__(self):
-        super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
+        super().__init__("Foyer", "Images/Hallways/Foyer.png", base_exits=[0,2])
 
 class Kitchen(RoomObject):
     rarity = 'common'
@@ -196,8 +208,8 @@ class Passageway(RoomObject):
     def __init__(self):
         super().__init__("Passageway", "Images/Hallways/Passageway.png", base_exits=[0,1,2,3])
 
-class Foyer(RoomObject):
-    rarity = 'uncommon'
-    cost = 2
+class Security(RoomObject):
+    rarity = 'rare'
+    cost = 1
     def __init__(self):
-        super().__init__("Foyer", "Images/Hallways/Foyer.png", base_exits=[0,2])
+        super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
