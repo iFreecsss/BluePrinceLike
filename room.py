@@ -1,4 +1,5 @@
 from item import ConsumableItem
+import numpy as np
 
 class RoomObject:
     """
@@ -98,6 +99,14 @@ class RoomObject:
     def on_entry(self, game_logic):
         """
         Applique un effet spécial lorsque le joueur entre dans la pièce.
+        'game_logic' est l'instance principale de la classe Game.
+        Par défaut, ne fait rien.
+        """
+        pass
+    
+    def on_draft(self, game_logic):
+        """
+        Applique un effet spécial lorsque le joueur choisit (draft) la pièce.
         'game_logic' est l'instance principale de la classe Game.
         Par défaut, ne fait rien.
         """
@@ -224,6 +233,38 @@ class Master_Bedroom(RoomObject):
     cost = 2
     def __init__(self):
         super().__init__("Master_Bedroom", "Images/Bedrooms/Master_Bedroom.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        """
+        Donne +1 Pas (Footsteps) pour chaque pièce déjà placée sur la carte.
+        """
+        # np.count_nonzero() compte tous les éléments non-None dans la grille
+        room_count = np.count_nonzero(game_logic.map.get_current_mapping())
+        
+        if room_count > 0:
+            game_logic.player.inventory.add_item(
+                ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", room_count)
+            )
+            game_logic.warning_message = f"Master Bedroom bonus: +{room_count} Footsteps!"
+
+class Weight_Room(RoomObject):
+    rarity = 'rare'
+    cost = 0
+    def __init__(self):
+        super().__init__("Master_Bedroom", "Images/Red Rooms/Weight_Room.png", base_exits=[0,1,2,3])
+    
+    def on_draft(self, game_logic):
+        """
+        Fait perdre la moitié des Pas actuels (arrondi à l'inférieur).
+        """
+        current_steps = game_logic.player.inventory.get_quantity("Footsteps")
+        steps_to_lose = current_steps // 2 # Arrondi à l'inférieur
+        
+        if steps_to_lose > 0:
+            game_logic.player.inventory.use_consumable("Footsteps", steps_to_lose)
+            game_logic.warning_message = f"You feel exhausted : -{steps_to_lose} Footsteps!"
+        else:
+            game_logic.warning_message = "You feel exhausted but have no steps to lose."
 
 class Parlor(RoomObject):
     rarity = 'common'
