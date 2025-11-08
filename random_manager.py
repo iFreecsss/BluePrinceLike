@@ -40,6 +40,9 @@ class RandomManager:
         # par défaut le jeu retire les pièces de la pioche : pas de doublons
         self.allow_duplicates = False
         
+        # par défaut les couloirs ont des serrures normales
+        self.hallways_are_unlocked = False
+        
         self.item_spawn_chance = 0.6
         
         self.floor_items = [
@@ -248,6 +251,11 @@ class RandomManager:
         """
         for base_direction in room_instance.base_exits:
             lock_level = self.calculate_lock_level(y_coordinate)
+            
+            # si l'effet Foyer est actif et que c'est un Hallway, on force le déverrouillage
+            if self.hallways_are_unlocked and room_instance.room_type == 'Hallway':
+                lock_level = 0
+            
             room_instance.set_exit_lock(base_direction, lock_level)
     
     def remove_room_from_deck(self, room_class_to_remove):
