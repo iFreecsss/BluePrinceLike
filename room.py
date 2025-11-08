@@ -275,6 +275,22 @@ class Kitchen(RoomObject):
     def __init__(self):
         super().__init__("Kitchen", "Images/Shops/Kitchen.png", base_exits=[1,2])
 
+class Maids_Chamber(RoomObject):
+    rarity = 'uncommon'
+    cost = 0
+    room_type = 'Red Room' #et Bedroom elle est les deux types
+    def __init__(self):
+        super().__init__("Maids_Chamber", "Images/Red Rooms/Maids_Chamber.png", base_exits=[1,2])
+    
+    def on_draft(self, game_logic):
+        """
+        Réduit la probabilité de trouver des objets dans TOUTES les salles.
+        """
+        # On modifie la chance de base globale dans le random_manager : réduit de 25%
+        current_chance = game_logic.random_manager.item_spawn_chance
+        game_logic.random_manager.item_spawn_chance = current_chance * 0.75 
+        game_logic.warning_message = "The maid tidies up. Item spawn chance reduced."
+
 class Master_Bedroom(RoomObject):
     rarity = 'rare'
     cost = 2
@@ -329,6 +345,22 @@ class Security(RoomObject):
     room_type = 'Room'
     def __init__(self):
         super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
+
+class Veranda(RoomObject):
+    rarity = 'uncommun'
+    cost = 2
+    room_type = 'Green Room'
+    def __init__(self):
+        super().__init__("Veranda", "Images/Green Rooms/Veranda.png", base_exits=[0,2])
+    
+    def on_draft(self, game_logic):
+        """
+        Augmente la probabilité de trouver des objets dans les Green Rooms.
+        """
+        # On modifie le multiplicateur spécifique aux "Green Room" : on double les chances
+        current_multiplier = game_logic.random_manager.item_spawn_multipliers['Green Room']
+        game_logic.random_manager.item_spawn_multipliers['Green Room'] = current_multiplier * 2.0
+        game_logic.warning_message = "The garden flourishes! More items in Green Rooms."
 
 class Weight_Room(RoomObject):
     rarity = 'rare'
