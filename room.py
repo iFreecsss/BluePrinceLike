@@ -388,13 +388,20 @@ class The_Pool(RoomObject):
         à la pioche si elles n'y sont pas déjà.
         """
         rooms_to_add = [Sauna, Locker_Room, Pump_Room]
-        deck = game_logic.random_manager.room_deck
+        
+        full_deck = game_logic.random_manager.room_deck
+        current_deck = game_logic.random_manager.current_room_deck
         added_rooms_names = []
 
         for room_class in rooms_to_add:
-            if room_class not in deck:
-                deck.append(room_class)
+            # on les ajoute à la pioche principale si elles n'y sont pas
+            if room_class not in full_deck:
+                full_deck.append(room_class)
                 added_rooms_names.append(room_class.__name__)
+            
+            # aussi à la pioche actuelle
+            if room_class not in current_deck:
+                current_deck.append(room_class)
         
         if added_rooms_names:
             game_logic.warning_message = f"New rooms added to the deck: {', '.join(added_rooms_names)}!"
