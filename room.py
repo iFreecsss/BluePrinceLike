@@ -78,7 +78,15 @@ class RoomObject:
             self.exit_locks[original_direction] = 0
             return True
         return False
-
+    
+    def unlock_all_exits(self):
+        """
+        Force le déverrouillage (niveau 0) de toutes les portes de base de cette salle.
+        Utile pour l'effet du Foyer.
+        """
+        for base_direction in self.base_exits:
+            self.exit_locks[base_direction] = 0
+    
     def add_item_to_floor(self, item):
         """
         Ajoute un objet au sol dans la salle.
@@ -245,6 +253,24 @@ class Foyer(RoomObject):
     room_type = 'Hallway'
     def __init__(self):
         super().__init__("Foyer", "Images/Hallways/Foyer.png", base_exits=[0,2])
+    
+    def on_draft(self, game_logic):
+        """
+        Déverrouille toutes les portes des Hallways existants
+        et garantit que les futurs Hallways seront déverrouillés.
+        """
+        game_logic.random_manager.hallways_are_unlocked = True
+        
+        current_map = game_logic.map.get_current_mapping()
+        for room in np.nditer(current_map, flags=['refs_ok']):
+            room_obj = room.item()
+            
+            # Si c'est un Hallway déjà posé
+            if room_obj is not None and room_obj.room_type == 'Hallway':
+                # On déverrouille toutes ses portes
+                room_obj.unlock_all_exits()
+
+        game_logic.warning_message = "All Hallway doors are now unlocked!"
 
 class Furnace(RoomObject):
     rarity = 'rare'
