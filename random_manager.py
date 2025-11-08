@@ -25,17 +25,17 @@ class RandomManager:
     
     def __init__(self):
         # doit contenir les classes des salles et non les instances
-        self.room_deck = [
+        self.full_room_deck = [
             Aquarium, Attic, Ballroom, Billiard_Room, 
             Boiler_Room, Chamber_of_Mirrors, Closet, 
             Coat_Check, Conference_Room, Parlor, Security, 
             Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
             Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
-            Furnace, Maids_Chamber, Veranda, The_Pool
+            Furnace, Maids_Chamber, Veranda, The_Pool, Terrace
         ]
         
         # la pioche qui se vide
-        self.current_room_deck = self.room_deck.copy()
+        self.current_room_deck = self.full_room_deck.copy()
         
         # par défaut le jeu retire les pièces de la pioche : pas de doublons
         self.allow_duplicates = False
@@ -105,7 +105,7 @@ class RandomManager:
         # On choisit la liste source en fonction de l'effet
         if self.allow_duplicates:
             # effet "Chamber of Mirrors" est actif : on pioche dans la liste complète
-            source_deck = self.room_deck
+            source_deck = self.full_room_deck
         else:
             # comportment normal : on pioche dans la liste qui se vide
             source_deck = self.current_room_deck
