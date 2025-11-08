@@ -368,6 +368,26 @@ class Security(RoomObject):
     def __init__(self):
         super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
 
+class Terrace(RoomObject):
+    rarity = 'common'
+    cost = 0
+    room_type = 'Green Room'
+    def __init__(self):
+        super().__init__("Terrace", "Images/Green Rooms/Terrace.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        """
+        Rend toutes les 'Green Rooms' gratuites pour le reste de la partie.
+        """
+        # on parcourt la liste principale de TOUTES les classes de pièces
+        for room_class in game_logic.random_manager.full_room_deck:
+            
+            # si la classe de pièce est de type 'Green Room'
+            if room_class.room_type == 'Green Room':
+                room_class.cost = 0
+        
+        game_logic.warning_message = "The garden blooms! All Green Rooms are now free."
+
 class Sauna(RoomObject):
     rarity = 'uncommon'
     cost = 0
@@ -389,7 +409,7 @@ class The_Pool(RoomObject):
         """
         rooms_to_add = [Sauna, Locker_Room, Pump_Room]
         
-        full_deck = game_logic.random_manager.room_deck
+        full_deck = game_logic.random_manager.full_room_deck
         current_deck = game_logic.random_manager.current_room_deck
         added_rooms_names = []
 
