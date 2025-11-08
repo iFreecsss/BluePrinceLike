@@ -30,7 +30,8 @@ class RandomManager:
             Boiler_Room, Chamber_of_Mirrors, Closet, 
             Coat_Check, Conference_Room, Parlor, Security, 
             Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
-            Bedroom, Chapel, Weight_Room
+            Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
+            Furnace
         ]
         self.item_spawn_chance = 0.6
 
@@ -45,6 +46,17 @@ class RandomManager:
         self.items_classes = [item[0] for item in self.floor_items]
         self.items_weights = [item[1] for item in self.floor_items]
         
+        # Stocke les multiplicateurs de poids pour chaque type de salle
+        # Par défaut, tout est à 1.0
+        self.type_weight_multipliers = {
+            'Red Room': 1.0,
+            'Green Room': 1.0,
+            'Shop': 1.0,
+            'Bedroom': 1.0,
+            'Room': 1.0,
+            'Secret Room' : 1.0
+        }
+    
     def is_room_placable(self, RoomClass, current_map, position, direction_of_entry):
         """
         Vérifie si une *Classe* de pièce peut être placée.
@@ -82,6 +94,11 @@ class RandomManager:
             # Cas horrible aucune pièce n'est plaçable normalement ça ne devrait jamais arriver
             return []
         
+        # Fonction pour calculer le poids final d'une pièce
+        def get_weighted_rarity(RoomClass):
+            base_weight = RARITY_WEIGHTS.get(RoomClass.rarity, 10)
+            type_multiplier = self.type_weight_multipliers.get(RoomClass.room_type, 1.0)
+            return base_weight * type_multiplier
 
         placable_free_rooms = [
             RoomClass for RoomClass in placable_room_classes 
@@ -93,9 +110,9 @@ class RandomManager:
         if not placable_free_rooms:
             # Si aucune pièce gratuite n'est dispo on tire juste 3 pièces normales pour éviter de crash
             weights = [
-                RARITY_WEIGHTS.get(RoomClass.rarity) 
+                get_weighted_rarity(RoomClass) 
                 for RoomClass in placable_room_classes
-            ]
+                ]
             
             # Là j'utilise .choices pour faire un tirage avec remise donc on a possiblement des doublons dans la 
             # même sélection de 3 pièces mais on peut utiliser .sample si on veut absolument pas de doublons
@@ -108,9 +125,9 @@ class RandomManager:
         else:
             # on récupère les poids des pièces dont le cost=0
             free_weights = [
-                RARITY_WEIGHTS.get(RoomClass.rarity) 
+                get_weighted_rarity(RoomClass) 
                 for RoomClass in placable_free_rooms
-            ]
+                ]
 
             # Pièce gratuite garantie (on en tire que 1)
             guaranteed_free_room = random.choices(
@@ -123,9 +140,9 @@ class RandomManager:
             
             # On récupère tous les poids des pièces quelque soit leur cost
             all_weights = [
-                RARITY_WEIGHTS.get(RoomClass.rarity) 
+                get_weighted_rarity(RoomClass)
                 for RoomClass in placable_room_classes
-            ]
+                ]
             # Parmi toutes les pièces (y compris les cost=0) on en tire 2 autres
             other_rooms = random.choices(
                 placable_room_classes, 
