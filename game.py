@@ -387,6 +387,9 @@ class Game:
             self.map.place_room(chosen_room, placement_pos)
             self.player.move(placement_pos)
             
+            # on retire cette pièce de la pioche si allow_duplicates est False
+            self.random_manager.remove_room_from_deck(chosen_room.__class__)
+            
             # On déclenche l'effet d'entrée de la pièce qu'on vient de placer
             chosen_room.on_entry(self)
             
