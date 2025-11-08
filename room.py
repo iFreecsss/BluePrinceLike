@@ -387,12 +387,33 @@ class Pump_Room(RoomObject):
     def __init__(self):
         super().__init__("Pump_Room", "Images/Rooms/Pump_Room.png", base_exits=[1,2])
 
+class Rotunda(RoomObject):
+    rarity = 'rare'
+    cost = 3
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Rotunda", "Images/Rooms/Rotunda.png", base_exits=[1,2])
+
 class Security(RoomObject):
     rarity = 'rare'
     cost = 1
     room_type = 'Room'
     def __init__(self):
         super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
+
+class Secret_Garden(RoomObject):
+    rarity = 'rare'
+    cost = 0
+    room_type = 'Green Room'
+    def __init__(self):
+        super().__init__("Secret_Garden", "Images/Green Rooms/Secret_Garden.png", base_exits=[1,2,3])
+
+class Secret_Passage(RoomObject):
+    rarity = 'uncommon'
+    cost = 1
+    room_type = 'Hallway'
+    def __init__(self):
+        super().__init__("Secret_Passage", "Images/Hallways/Secret_Passage.png", base_exits=[2])
 
 class Terrace(RoomObject):
     rarity = 'common'
