@@ -33,11 +33,15 @@ class RandomManager:
             Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
             Furnace, Maids_Chamber, Veranda, The_Pool
         ]
+        
+        # la pioche qui se vide
+        self.current_room_deck = self.room_deck.copy()
+        
+        # par défaut le jeu retire les pièces de la pioche : pas de doublons
+        self.allow_duplicates = False
+        
         self.item_spawn_chance = 0.6
         
-        # Par défaut, le jeu retire les pièces de la pioche (pas de doublons)
-        self.allow_duplicates = False
-
         self.floor_items = [
             (Apple, 20),
             (Banana, 15),
@@ -98,9 +102,17 @@ class RandomManager:
         Prend en compte la rareté.
         """
         
+        # On choisit la liste source en fonction de l'effet
+        if self.allow_duplicates:
+            # effet "Chamber of Mirrors" est actif : on pioche dans la liste complète
+            source_deck = self.room_deck
+        else:
+            # comportment normal : on pioche dans la liste qui se vide
+            source_deck = self.current_room_deck
+        
         # Tri la liste complète pour garder que les pièces plaçables
         placable_room_classes = []
-        for RoomClass in self.room_deck:
+        for RoomClass in source_deck:
             if self.is_room_placable(RoomClass, current_map, position, direction_of_entry):
                 placable_room_classes.append(RoomClass)
         
@@ -240,13 +252,13 @@ class RandomManager:
     
     def remove_room_from_deck(self, room_class_to_remove):
         """
-        Retire une pièce de la pioche, sauf si l'effet
-        de la Chamber of Mirrors (allow_duplicates) est actif.
+        Retire une pièce de la pioche actuelle (current_room_deck), 
+        sauf si l'effet de la Chamber of Mirrors (allow_duplicates) est actif.
         """
         # Si l'effet est actif, on ne fait rien, la pièce reste.
         if self.allow_duplicates:
             return
 
         # Sinon on retire la pièce de la pioche
-        if room_class_to_remove in self.room_deck:
-            self.room_deck.remove(room_class_to_remove)
+        if room_class_to_remove in self.current_room_deck:
+            self.current_room_deck.remove(room_class_to_remove)
