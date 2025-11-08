@@ -183,7 +183,15 @@ class Chamber_of_Mirrors(RoomObject):
     cost = 0
     room_type = 'Room'
     def __init__(self):
-        super().__init__("Chamber_of_Mirrors", "Images/Rooms/Chamber_of_Mirrors.png", base_exits=[2]) 
+        super().__init__("Chamber_of_Mirrors", "Images/Rooms/Chamber_of_Mirrors.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        """
+        Active la possibilité de tirer des doublons de pièces
+        en empêchant le retrait de la pioche.
+        """
+        game_logic.random_manager.allow_duplicates = True
+        game_logic.warning_message = "The mirrors reflect reality. Duplicates are now possible!"
 
 class Closet(RoomObject):
     rarity = 'common'
@@ -275,6 +283,13 @@ class Kitchen(RoomObject):
     def __init__(self):
         super().__init__("Kitchen", "Images/Shops/Kitchen.png", base_exits=[1,2])
 
+class Locker_Room(RoomObject):
+    rarity = 'rare'
+    cost = 1
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Locker_Room", "Images/Rooms/Locker_Room.png", base_exits=[0,2])
+
 class Maids_Chamber(RoomObject):
     rarity = 'uncommon'
     cost = 0
@@ -339,6 +354,13 @@ class Patio(RoomObject):
     def __init__(self):
         super().__init__("Patio", "Images/Green Rooms/Patio.png", base_exits=[1,2])
 
+class Pump_Room(RoomObject):
+    rarity = 'uncommon'
+    cost = 0
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Pump_Room", "Images/Rooms/Pump_Room.png", base_exits=[1,2])
+
 class Security(RoomObject):
     rarity = 'rare'
     cost = 1
@@ -346,8 +368,39 @@ class Security(RoomObject):
     def __init__(self):
         super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
 
+class Sauna(RoomObject):
+    rarity = 'uncommon'
+    cost = 0
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Sauna", "Images/Rooms/Sauna.png", base_exits=[2])
+
+class The_Pool(RoomObject):
+    rarity = 'common'
+    cost = 1
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("The_Pool", "Images/Rooms/The_Pool.png", base_exits=[1,2,3])
+    
+    def on_draft(self, game_logic):
+        """
+        Ajoute 3 nouvelles pièces (Sauna, Locker_Room, Pump_Room)
+        à la pioche si elles n'y sont pas déjà.
+        """
+        rooms_to_add = [Sauna, Locker_Room, Pump_Room]
+        deck = game_logic.random_manager.room_deck
+        added_rooms_names = []
+
+        for room_class in rooms_to_add:
+            if room_class not in deck:
+                deck.append(room_class)
+                added_rooms_names.append(room_class.__name__)
+        
+        if added_rooms_names:
+            game_logic.warning_message = f"New rooms added to the deck: {', '.join(added_rooms_names)}!"
+
 class Veranda(RoomObject):
-    rarity = 'uncommun'
+    rarity = 'uncommon'
     cost = 2
     room_type = 'Green Room'
     def __init__(self):
