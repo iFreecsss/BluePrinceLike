@@ -9,6 +9,7 @@ class RoomObject:
     # Je les met ici pour qu'ils soient difficile changeable par erreur
     rarity = 'common'
     cost = 0
+    room_type = 'Room'
 
     def __init__(self, name, image, base_exits=None):
         self.name = name
@@ -115,38 +116,44 @@ class RoomObject:
 class EntryHall(RoomObject):
     rarity = 'common' 
     cost = 0
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Entrance Hall", "Images/Rooms/Entrance_Hall.png", base_exits=[0,1,3])
 
 class AnteChamber(RoomObject):
     rarity = 'common' 
     cost = 0
+    room_type = 'Room'
     def __init__(self):
         super().__init__("AnteChamber", "Images/Rooms/Antechamber.png", base_exits=[1,2,3]) 
 
 class Aquarium(RoomObject):
     rarity = 'uncommon'
     cost = 1
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Aquarium", "Images/Rooms/Aquarium.png", base_exits=[1,2,3])
 
 class Attic(RoomObject):
     rarity = 'common' 
     cost = 3
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Attic", "Images/Rooms/Attic.png", base_exits=[2]) 
 
 class Ballroom(RoomObject):
     rarity = 'uncommon'
     cost = 2
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Ballroom", "Images/Rooms/Ballroom.png", base_exits=[0,2])
 
 class Bedroom(RoomObject):
     rarity = 'common'
     cost = 0
+    room_type = 'Bedroom'
     def __init__(self):
-        super().__init__("Ballroom", "Images/Bedrooms/Bedroom.png", base_exits=[1,2])
+        super().__init__("Bedroom", "Images/Bedrooms/Bedroom.png", base_exits=[1,2])
         
     def on_entry(self, game_logic):
         """
@@ -160,44 +167,51 @@ class Bedroom(RoomObject):
 class Billiard_Room(RoomObject):
     rarity = 'common'
     cost = 0
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Billiard_Room", "Images/Rooms/Billiard_Room.png", base_exits=[1,2]) 
 
 class Boiler_Room(RoomObject):
     rarity = 'uncommon'
     cost = 1
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Boiler_Room", "Images/Rooms/Boiler_Room.png", base_exits=[1,2,3])
 
 class Chamber_of_Mirrors(RoomObject):
     rarity = 'rare'
     cost = 0
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Chamber_of_Mirrors", "Images/Rooms/Chamber_of_Mirrors.png", base_exits=[2]) 
 
 class Closet(RoomObject):
     rarity = 'common'
     cost = 0
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Closet", "Images/Rooms/Closet.png", base_exits=[2]) 
 
 class Coat_Check(RoomObject):
     rarity = 'common'
     cost = 0
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Coat_Check", "Images/Rooms/Coat_Check.png", base_exits=[2])
 
 class Conference_Room(RoomObject):
     rarity = 'uncommon'
     cost = 0
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Conference_Room", "Images/Rooms/Conference_Room.png", base_exits=[1,2,3])
 
 class Chapel(RoomObject):
     rarity = 'common'
     cost = 0
+    room_type = 'Red Room'
     def __init__(self):
-        super().__init__("Conference_Room", "Images/Red Rooms/Chapel.png", base_exits=[1,2,3])
+        super().__init__("Chapel", "Images/Red Rooms/Chapel.png", base_exits=[1,2,3])
     
     def on_entry(self, game_logic):
         """
@@ -213,24 +227,58 @@ class Chapel(RoomObject):
 class Dining_Room(RoomObject):
     rarity = 'common'
     cost = 2
+    room_type = 'Room'
     def __init__(self):
         super().__init__("Dining_Room", "Images/Rooms/Dining_Room.png", base_exits=[1,2,3])
 
 class Foyer(RoomObject):
     rarity = 'uncommon'
     cost = 2
+    room_type = 'Hallway'
     def __init__(self):
         super().__init__("Foyer", "Images/Hallways/Foyer.png", base_exits=[0,2])
+
+class Furnace(RoomObject):
+    rarity = 'rare'
+    cost = 0
+    room_type = 'Red Room'
+    def __init__(self):
+        super().__init__("Furnace", "Images/Red Rooms/Furnace.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        """
+        Augmente la chance de tirer des Red Rooms.
+        """
+        # On multiplie par 5 la probabilité des Red Rooms
+        game_logic.random_manager.type_weight_multipliers['Red Room'] *= 5.0
+        game_logic.warning_message = "Heat spreads! More chance to draft Red Rooms."
+
+class Greenhouse(RoomObject):
+    rarity = 'common'
+    cost = 1
+    room_type = 'Green Room'
+    def __init__(self):
+        super().__init__("Greenhouse", "Images/Green Rooms/Greenhouse.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        """
+        Augmente la chance de tirer des Green Rooms.
+        """
+        # On multiplie par 3 la probabilité des Green Rooms
+        game_logic.random_manager.type_weight_multipliers['Green Room'] *= 3.0
+        game_logic.warning_message = "The air feels fresher. More chance to draft Green Rooms."
 
 class Kitchen(RoomObject):
     rarity = 'common'
     cost = 0
+    room_type = 'Shop'
     def __init__(self):
         super().__init__("Kitchen", "Images/Shops/Kitchen.png", base_exits=[1,2])
 
 class Master_Bedroom(RoomObject):
     rarity = 'rare'
     cost = 2
+    room_type = 'Bedroom'
     def __init__(self):
         super().__init__("Master_Bedroom", "Images/Bedrooms/Master_Bedroom.png", base_exits=[2])
     
@@ -247,11 +295,47 @@ class Master_Bedroom(RoomObject):
             )
             game_logic.warning_message = f"Master Bedroom bonus: +{room_count} Footsteps!"
 
+class Office(RoomObject):
+    rarity = 'common'
+    cost = 2
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Office", "Images/Rooms/Office.png", base_exits=[1,2])
+
+class Parlor(RoomObject):
+    rarity = 'common'
+    cost = 0
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Parlor", "Images/Rooms/Parlor.png", base_exits=[1,2])
+
+class Passageway(RoomObject):
+    rarity = 'common'
+    cost = 2
+    room_type = 'Hallway'
+    def __init__(self):
+        super().__init__("Passageway", "Images/Hallways/Passageway.png", base_exits=[0,1,2,3])
+
+class Patio(RoomObject):
+    rarity = 'common'
+    cost = 1
+    room_type = 'Green Room'
+    def __init__(self):
+        super().__init__("Patio", "Images/Green Rooms/Patio.png", base_exits=[1,2])
+
+class Security(RoomObject):
+    rarity = 'rare'
+    cost = 1
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
+
 class Weight_Room(RoomObject):
     rarity = 'rare'
     cost = 0
+    room_type = 'Red Room'
     def __init__(self):
-        super().__init__("Master_Bedroom", "Images/Red Rooms/Weight_Room.png", base_exits=[0,1,2,3])
+        super().__init__("Weight_Room", "Images/Red Rooms/Weight_Room.png", base_exits=[0,1,2,3])
     
     def on_draft(self, game_logic):
         """
@@ -265,21 +349,3 @@ class Weight_Room(RoomObject):
             game_logic.warning_message = f"You feel exhausted : -{steps_to_lose} Footsteps!"
         else:
             game_logic.warning_message = "You feel exhausted but have no steps to lose."
-
-class Parlor(RoomObject):
-    rarity = 'common'
-    cost = 0
-    def __init__(self):
-        super().__init__("Parlor", "Images/Rooms/Parlor.png", base_exits=[1,2])
-
-class Passageway(RoomObject):
-    rarity = 'common'
-    cost = 2
-    def __init__(self):
-        super().__init__("Passageway", "Images/Hallways/Passageway.png", base_exits=[0,1,2,3])
-
-class Security(RoomObject):
-    rarity = 'rare'
-    cost = 1
-    def __init__(self):
-        super().__init__("Security", "Images/Rooms/Security.png", base_exits=[1,2,3])
