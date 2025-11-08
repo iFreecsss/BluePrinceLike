@@ -31,9 +31,12 @@ class RandomManager:
             Coat_Check, Conference_Room, Parlor, Security, 
             Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
             Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
-            Furnace, Maids_Chamber, Veranda
+            Furnace, Maids_Chamber, Veranda, The_Pool
         ]
         self.item_spawn_chance = 0.6
+        
+        # Par défaut, le jeu retire les pièces de la pioche (pas de doublons)
+        self.allow_duplicates = False
 
         self.floor_items = [
             (Apple, 20),
@@ -234,3 +237,16 @@ class RandomManager:
         for base_direction in room_instance.base_exits:
             lock_level = self.calculate_lock_level(y_coordinate)
             room_instance.set_exit_lock(base_direction, lock_level)
+    
+    def remove_room_from_deck(self, room_class_to_remove):
+        """
+        Retire une pièce de la pioche, sauf si l'effet
+        de la Chamber of Mirrors (allow_duplicates) est actif.
+        """
+        # Si l'effet est actif, on ne fait rien, la pièce reste.
+        if self.allow_duplicates:
+            return
+
+        # Sinon on retire la pièce de la pioche
+        if room_class_to_remove in self.room_deck:
+            self.room_deck.remove(room_class_to_remove)
