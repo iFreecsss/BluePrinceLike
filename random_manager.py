@@ -31,7 +31,7 @@ class RandomManager:
             Coat_Check, Conference_Room, Parlor, Security, 
             Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
             Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
-            Furnace
+            Furnace, Maids_Chamber, Veranda
         ]
         self.item_spawn_chance = 0.6
 
@@ -54,6 +54,17 @@ class RandomManager:
             'Shop': 1.0,
             'Bedroom': 1.0,
             'Room': 1.0,
+            'Secret Room' : 1.0
+        }
+        
+        # Stocke les multiplicateurs pour la CHANCE qu'une salle contienne des objets
+        self.item_spawn_multipliers = {
+            'Red Room': 1.0,
+            'Green Room': 1.0,
+            'Shop': 1.0,
+            'Bedroom': 1.0,
+            'Room': 1.0,
+            'Hallway': 1.0,
             'Secret Room' : 1.0
         }
     
@@ -159,8 +170,17 @@ class RandomManager:
 
         for RoomClass in chosen_classes:
             instance = RoomClass()
-
-            if random.random() < self.item_spawn_chance:
+            
+            base_spawn_chance = self.item_spawn_chance # la chance de base globale
+            
+            # le multiplicateur spécifique au type de cette salle
+            type_multiplier = self.item_spawn_multipliers.get(instance.room_type, 1.0)
+            
+            final_spawn_chance = base_spawn_chance * type_multiplier # calcule de la chance finale
+            final_spawn_chance = min(final_spawn_chance, 1.0) # on s'assure que la chance ne dépasse pas 100%
+            
+            if random.random() < final_spawn_chance:
+                
                 num_items_to_spawn = random.choices([2,3,4], weights=[50,30,20], k=1)[0]
 
                 for _ in range(num_items_to_spawn):
