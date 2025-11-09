@@ -33,7 +33,8 @@ class RandomManager:
             Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
             Furnace, Maids_Chamber, Veranda, The_Pool, Terrace,
             Boudoir, Guest_Bedroom, Her_Ladyships_Chamber, Nursery,
-            Rotunda, Secret_Garden, Secret_Passage, Servants_Quarters
+            Rotunda, Secret_Garden, Secret_Passage, Servants_Quarters,
+            Corridor, East_Wing_Hall, Hallway, West_Wing_Hall
         ]
         
         # la pioche qui se vide
@@ -89,6 +90,18 @@ class RandomManager:
         Vérifie si une *Classe* de pièce peut être placée.
         Teste les 4 rotations pour trouver au moins une orientation valide.
         """
+        # Vérification des contraintes de placement
+        x, y = position
+        constraints = RoomClass.placement_constraints
+        
+        # la carte fait 5 de large (0 à 4)
+        if constraints == "WEST":
+            if x > 1: # Doit être dans les colonnes 0 ou 1
+                return False
+        elif constraints == "EAST":
+            if x < 3: # Doit être dans les colonnes 3 ou 4
+                return False
+        
         temp_room = RoomClass() # instance temporaire pour les tests de rotation
         
         for rotation in range(4):
@@ -257,6 +270,10 @@ class RandomManager:
         """
         for base_direction in room_instance.base_exits:
             lock_level = self.calculate_lock_level(y_coordinate)
+            
+            # vérifie d'abord si c'est un Corridor
+            if room_instance.name == "Corridor":
+                lock_level = 0
             
             # si l'effet Foyer est actif et que c'est un Hallway, on force le déverrouillage
             if self.hallways_are_unlocked and room_instance.room_type == 'Hallway':
