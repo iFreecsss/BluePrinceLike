@@ -31,7 +31,9 @@ class RandomManager:
             Coat_Check, Conference_Room, Parlor, Security, 
             Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
             Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
-            Furnace, Maids_Chamber, Veranda, The_Pool, Terrace
+            Furnace, Maids_Chamber, Veranda, The_Pool, Terrace,
+            Boudoir, Guest_Bedroom, Her_Ladyships_Chamber, Nursery,
+            Rotunda, Secret_Garden, Secret_Passage, Servants_Quarters
         ]
         
         # la pioche qui se vide
@@ -42,6 +44,10 @@ class RandomManager:
         
         # par défaut les couloirs ont des serrures normales
         self.hallways_are_unlocked = False
+        
+        self.nursery_bonus_active = False
+        self.next_boudoir_bonus = False
+        self.next_closet_bonus = False
         
         self.item_spawn_chance = 0.6
         
