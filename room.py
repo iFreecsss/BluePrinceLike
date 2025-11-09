@@ -119,6 +119,15 @@ class RoomObject:
         'game_logic' est l'instance principale de la classe Game.
         Par défaut, ne fait rien.
         """
+        # Si le bonus Nursery est actif ET que la pièce est une Bedroom
+        if game_logic.random_manager.nursery_bonus_active and self.room_type == 'Bedroom':
+            game_logic.player.inventory.add_item(
+                ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 5)
+                )
+            # On ajoute au message existant (s'il y en a un)
+            current_msg = game_logic.warning_message if game_logic.warning_message else ""
+            game_logic.warning_message = f"{current_msg} Nursery bonus: +5 Footsteps!"
+        
         pass
 
 class EntryHall(RoomObject):
@@ -186,6 +195,23 @@ class Boiler_Room(RoomObject):
     def __init__(self):
         super().__init__("Boiler_Room", "Images/Rooms/Boiler_Room.png", base_exits=[1,2,3])
 
+class Boudoir(RoomObject):
+    rarity = 'common'
+    cost = 0
+    room_type = 'Bedroom'
+    def __init__(self):
+        super().__init__("Boudoir", "Images/Bedrooms/Boudoir.png", base_exits=[1,2])
+    
+    def on_entry(self, game_logic):
+        # vérifie si le bonus est actif
+        if game_logic.random_manager.next_boudoir_bonus:
+            game_logic.player.inventory.add_item(
+                ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 10)
+            )
+            game_logic.warning_message = "Her Ladyship's favor: +10 Footsteps in the Boudoir!"
+            # désactive le bonus après utilisation
+            game_logic.random_manager.next_boudoir_bonus = False
+
 class Chamber_of_Mirrors(RoomObject):
     rarity = 'rare'
     cost = 0
@@ -206,7 +232,17 @@ class Closet(RoomObject):
     cost = 0
     room_type = 'Room'
     def __init__(self):
-        super().__init__("Closet", "Images/Rooms/Closet.png", base_exits=[2]) 
+        super().__init__("Closet", "Images/Rooms/Closet.png", base_exits=[2])
+    
+    def on_entry(self, game_logic):
+        # vérifie si le bonus est actif
+        if game_logic.random_manager.next_closet_bonus:
+            game_logic.player.inventory.add_item(
+                ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 3)
+            )
+            game_logic.warning_message = "Found Her Ladyship's stash: +3 Gems in the Closet!"
+            # désactive le bonus après utilisation
+            game_logic.random_manager.next_closet_bonus = False
 
 class Coat_Check(RoomObject):
     rarity = 'common'
@@ -302,6 +338,37 @@ class Greenhouse(RoomObject):
         game_logic.random_manager.type_weight_multipliers['Green Room'] *= 3.0
         game_logic.warning_message = "The air feels fresher. More chance to draft Green Rooms."
 
+class Guest_Bedroom(RoomObject):
+    rarity = 'common'
+    cost = 0
+    room_type = 'Bedroom'
+    def __init__(self):
+        super().__init__("Guest_Bedroom", "Images/Bedrooms/Guest_Bedroom.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        """
+        Donne +10 Pas au moment du tirage (draft).
+        """
+        game_logic.player.inventory.add_item(
+            ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 10)
+        )
+        game_logic.warning_message = "Guest Bedroom drafted! +10 Footsteps."
+
+class Her_Ladyships_Chamber(RoomObject):
+    rarity = 'rare'
+    cost = 0
+    room_type = 'Bedroom'
+    def __init__(self):
+        super().__init__("Her_Ladyships_Chamber", "Images/Bedrooms/Her_Ladyships_Chamber.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        super().on_draft(game_logic) # pour le bonus Nursery éventuel
+        
+        # active les bonus pour la prochaine visite
+        game_logic.random_manager.next_boudoir_bonus = True
+        game_logic.random_manager.next_closet_bonus = True
+        game_logic.warning_message = "Her Ladyship is pleased. Bonuses await in the Boudoir and Closet."
+
 class Kitchen(RoomObject):
     rarity = 'common'
     cost = 0
@@ -351,6 +418,23 @@ class Master_Bedroom(RoomObject):
                 ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", room_count)
             )
             game_logic.warning_message = f"Master Bedroom bonus: +{room_count} Footsteps!"
+
+class Nursery(RoomObject):
+    rarity = 'common'
+    cost = 1
+    room_type = 'Bedroom'
+    def __init__(self):
+        super().__init__("Nursery", "Images/Bedrooms/Nursery.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        """
+        Active le bonus de +5 pas pour toutes les futures chambres draftées.
+        """
+        # on appelle d'abord super().on_draft() pour avoir son propre effet si une autre Nursery a déjà été posée
+        super().on_draft(game_logic)
+        
+        game_logic.random_manager.nursery_bonus_active = True
+        game_logic.warning_message = "Nursery built! Future Bedrooms will grant +5 Footsteps."
 
 class Office(RoomObject):
     rarity = 'common'
@@ -414,6 +498,31 @@ class Secret_Passage(RoomObject):
     room_type = 'Hallway'
     def __init__(self):
         super().__init__("Secret_Passage", "Images/Hallways/Secret_Passage.png", base_exits=[2])
+
+class Servants_Quarters(RoomObject):
+    rarity = 'uncommon'
+    cost = 1
+    room_type = 'Bedroom'
+    def __init__(self):
+        super().__init__("Servants_Quarters", "Images/Bedrooms/Servants_Quarters.png", base_exits=[2])
+    
+    def on_draft(self, game_logic):
+        super().on_draft(game_logic) # bonus Nursery
+        
+        # compte les Bedrooms sur la carte
+        bedroom_count = 0
+        current_map = game_logic.map.get_current_mapping()
+        for room in np.nditer(current_map, flags=['refs_ok']):
+            room_obj = room.item()
+            if room_obj is not None and room_obj.room_type == 'Bedroom':
+                bedroom_count += 1
+        
+        if bedroom_count > 0:
+            game_logic.player.inventory.add_item(
+                ConsumableItem("Key", "Images/Icons/key_icon.png", bedroom_count)
+                )
+            current_msg = game_logic.warning_message if game_logic.warning_message else ""
+            game_logic.warning_message = f"{current_msg} Servants' aid: +{bedroom_count} Keys!"
 
 class Terrace(RoomObject):
     rarity = 'common'
