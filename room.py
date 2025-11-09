@@ -10,6 +10,7 @@ class RoomObject:
     rarity = 'common'
     cost = 0
     room_type = 'Room'
+    placement_constraints = None
 
     def __init__(self, name, image, base_exits=None):
         self.name = name
@@ -275,6 +276,12 @@ class Chapel(RoomObject):
             # L'effet s'active mais le joueur ne peut pas payer
             game_logic.warning_message = "Chapel demands tribute but you're poor."
 
+class Corridor(RoomObject):
+    rarity = 'common'
+    cost = 0
+    room_type = 'Hallway'
+    def __init__(self):
+        super().__init__("Corridor", "Images/Hallways/Corridor.png", base_exits=[0,2])
 
 class Dining_Room(RoomObject):
     rarity = 'common'
@@ -282,6 +289,14 @@ class Dining_Room(RoomObject):
     room_type = 'Room'
     def __init__(self):
         super().__init__("Dining_Room", "Images/Rooms/Dining_Room.png", base_exits=[1,2,3])
+
+class East_Wing_Hall(RoomObject):
+    rarity = 'uncommon'
+    cost = 0
+    room_type = 'Hallway'
+    placement_constraints = 'EAST'
+    def __init__(self):
+        super().__init__("East_Wing_Hall", "Images/Hallways/East_Wing_Hall.png", base_exits=[1,2,3])
 
 class Foyer(RoomObject):
     rarity = 'uncommon'
@@ -353,6 +368,13 @@ class Guest_Bedroom(RoomObject):
             ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 10)
         )
         game_logic.warning_message = "Guest Bedroom drafted! +10 Footsteps."
+
+class Hallway(RoomObject):
+    rarity = 'common'
+    cost = 0
+    room_type = 'Hallway'
+    def __init__(self):
+        super().__init__("Hallway", "Images/Hallways/Hallway.png", base_exits=[1,2,3])
 
 class Her_Ladyships_Chamber(RoomObject):
     rarity = 'rare'
@@ -617,3 +639,11 @@ class Weight_Room(RoomObject):
             game_logic.warning_message = f"You feel exhausted : -{steps_to_lose} Footsteps!"
         else:
             game_logic.warning_message = "You feel exhausted but have no steps to lose."
+
+class West_Wing_Hall(RoomObject):
+    rarity = 'common'
+    cost = 0
+    room_type = 'Hallway'
+    placement_constraints = 'WEST'
+    def __init__(self):
+        super().__init__("West_Wing_Hall", "Images/Hallways/West_Wing_Hall.png", base_exits=[1,2,3])
