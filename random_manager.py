@@ -1,7 +1,8 @@
 import random
 from room import *
 from item import *
-
+from inventory import *
+import copy
 # Définition des poids pour les raretés
 RARITY_WEIGHTS = {
     'common': 10,
@@ -34,11 +35,11 @@ class RandomManager:
         self.item_spawn_chance = 0.6
 
         self.floor_items = [
-            (Apple, 20),
-            (Banana, 15),
-            (Diamond, 10),
-            (Key, 5),
-            (Dice, 5)
+            (player_Apple, 20),
+            (player_Banana, 15),
+            (player_Diamond, 10),
+            (player_Key, 5),
+            (player_Dice, 5)
         ]
 
         self.items_classes = [item[0] for item in self.floor_items]
@@ -152,11 +153,12 @@ class RandomManager:
                         weights=self.items_weights,
                         k=1
                     )[0]
-                    item_instance = item_class_to_spawn()
 
-                    if isinstance(item_instance, (Diamond, Key, Dice)):
-                        item_instance.quantity = random.choices([1,2,5], weights=[74,25,1], k=1)[0]
-                    instance.add_item_to_floor(item_instance)
+                    #item_instance = item_class_to_spawn()
+
+                    #if item_instance.name in ["Diamond", "Key", "Dice"]:
+                    #    item_instance.quantity = random.choices([1,2,5], weights=[74,25,1], k=1)[0]
+                    #A FINIR
                     
             # On assigne les blocages en fonction de la ligne (pos_y)
             self.assign_locks_to_room(instance, pos_y)
@@ -196,3 +198,16 @@ class RandomManager:
         for base_direction in room_instance.base_exits:
             lock_level = self.calculate_lock_level(y_coordinate)
             room_instance.set_exit_lock(base_direction, lock_level)
+
+    def assign_inventories_to_room(self, room_instance: RoomObject):
+        """
+        AJOUT D'INVENTAIRE DE BASE POUR CHAQUE CHAMBRE POST TIRAGE, A MODIFIER POUR LE RENDRE DEPENDANT SUR LA CHAMBRE, PEUT ETRE RAJOUTER UNE FONCTION QUE POUR CA.
+        L'APPEL SE FAIT DANS GAME.
+        """
+        ########################
+
+        
+        room_instance.inventories.set_inventory(copy.deepcopy(room_generic_Inventory.inventory))
+        
+        ########################
+    

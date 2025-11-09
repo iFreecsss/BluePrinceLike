@@ -31,6 +31,9 @@ class UI:
         self.message_timer = 0
         self.MESSAGE_DURATION = 1250
 
+        #Index pour les actions
+        self.action_index = 0
+
     def init_pygame(self):
         #Pygame window init
         pygame.init()
@@ -405,6 +408,33 @@ class UI:
                 self.message_text = None
                 self.message_timer = 0
     
+
+    def draw_action_message(self, message):
+        """
+        Affiche le message d'avertissement au centre de la carte s'il existe
+        et si son minuteur n'est pas écoulé.
+        """
+        if self.message_text:
+            current_time = pygame.time.get_ticks()
+            
+            if current_time - self.message_timer < self.MESSAGE_DURATION:
+                
+                text_surface = self.message_font.render(message, True, self.COLOR_MESSAGE_TEXT)
+                text_rect = text_surface.get_rect(center=self.draw_room_rect.center) # centré sur le menu d'action
+                
+                # fond semi-transparent
+                bg_rect = text_rect.inflate(20, 10) # 20px de marge H, 10px de marge V
+                bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+                bg_surface.fill((0, 0, 0, 150)) # Noir semi-transparent
+                
+                self.display_surface.blit(bg_surface, bg_rect)
+                self.display_surface.blit(text_surface, text_rect)
+                
+            else:
+                # le temps est écoulé on efface le message
+                self.message_text = None
+                self.message_timer = 0
+
     def draw_victory_screen(self):
         """
         Affiche l'écran de victoire.
@@ -664,6 +694,45 @@ class UI:
             item_name_rect = item_name_text.get_rect(center=(choice_rect.centerx, choice_rect.bottom - 10))
             self.display_surface.blit(item_name_text, item_name_rect)
 
+    def draw_possible_actions(self):
+        panel = self.draw_room_rect
+
+        action_messages = self.data.get('roomactions', [])
+        self.action_index = self.data.get('action_index',0)
+        num_actions = len(action_messages)
+
+        if num_actions == 0:
+            return
+        title_text = self.font.render("Possible Actions :", True, self.COLOR_TEXT)
+        title_rect = title_text.get_rect(center=(panel.centerx, panel.top + self.MARGIN))
+        self.display_surface.blit(title_text, title_rect)
+
+        top_margin = 100
+        available_height = panel.height - top_margin - self.MARGIN
+        rect_height = available_height // num_actions
+        rect_width = panel.width - 2 * self.MARGIN
+        start_y = panel.top + top_margin
+
+        for i in range(num_actions):
+            rect_y = start_y + i * rect_height
+            rect = pygame.Rect(
+                panel.left + self.MARGIN,
+                rect_y,
+                rect_width,
+                rect_height - 10
+            )
+
+            # --- Only selected rect gets white outline ---
+            if i == self.action_index:
+                pygame.draw.rect(self.display_surface, (255, 255, 255), rect, width=3, border_radius=10)
+            else:
+                pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, rect, width=2, border_radius=10)
+
+            # --- Text (replace DEBUG later with actual action name) ---
+            action_text = self.font.render(action_messages[i], True, self.COLOR_TEXT)
+            text_rect = action_text.get_rect(center=rect.center)
+            self.display_surface.blit(action_text, text_rect)
+
     def run(self):
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
         inputs = []
@@ -707,6 +776,10 @@ class UI:
                         inputs.append("LEFT_ROOM")
                     elif event.key == pygame.K_RIGHT: 
                         inputs.append("RIGHT_ROOM")
+                    elif event.key == pygame.K_UP: 
+                        inputs.append("ARROW_UP")
+                    elif event.key == pygame.K_DOWN: 
+                        inputs.append("ARROW_DOWN")
                     elif event.key == pygame.K_RETURN: 
                         inputs.append("ENTER")
                     elif event.key == pygame.K_r:
@@ -748,8 +821,8 @@ class UI:
 
         if game_state == "DRAWING_ROOM":
             self.draw_room_choice_screen() 
-        elif game_state == "COLLECTING_ITEMS":
-            self.draw_items_to_collect()
+        elif game_state == "EXPLORING":
+            self.draw_possible_actions()
         
         if game_state == "SETTINGS":
             settings_inputs = self.draw_settings_menu(mouse_pos, mouse_pressed)

@@ -1,3 +1,5 @@
+from inventory import *
+
 class RoomObject:
     """
     Room class, inheritance only, helps stock all rooms as needed
@@ -15,6 +17,7 @@ class RoomObject:
         self.orientation = 0
         self.exit_locks = {}
         self.items_on_floor = []
+        self.inventories = Room_Inventory()
 
     def has_exits(self, direction):
 
@@ -74,24 +77,9 @@ class RoomObject:
             self.exit_locks[original_direction] = 0
             return True
         return False
-
-    def add_item_to_floor(self, item):
-        """
-        Ajoute un objet au sol dans la salle.
-        """
-        self.items_on_floor.append(item)
-
-    def get_items_on_floor(self):
-        """
-        Renvoie la liste des objets au sol dans la salle.
-        """
-        return self.items_on_floor
     
-    def clear_items_on_floor(self):
-        """
-        Vide la liste des objets au sol dans la salle.
-        """
-        self.items_on_floor = []
+    def get_inventories(self):
+        return self.inventories.get_inventories()
 
 class EntryHall(RoomObject):
     rarity = 'common' 
