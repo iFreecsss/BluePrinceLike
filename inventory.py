@@ -87,7 +87,6 @@ class Room_Inventory():
         if isinstance(inventory_Item, RoomObject):
             self.inventory.append(inventory_Item)
     
-
     def get_action_number(self):
         return len(self.inventory)
 
@@ -97,13 +96,13 @@ class Room_Inventory():
             messages.append(item.action_message)
         return messages
     
-
     def checkInv_activation_condition(self, player, room_object : RoomObject):
         result = player.check_Item(room_object.activation_condition, room_object.item)
         return result
 
     def set_inventory(self, inventory):
         self.inventory = inventory
+
     def return_inventory_copy(self):
         inventory = self
         return inventory
@@ -128,43 +127,23 @@ class Room_Inventory():
 
 
 #Room Item - Name, Item to collect/interact with, Activation Condition (None if No item needed to interact),"Action Msg", "Action Sucess", "Action Failure"
-
-room_None = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Take Apple", "You took the apples!","Couldn't take item")
+room_None = RoomObject("Nothing", item_None, None, "", "", "")
 room_Apple = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Take Apple", "You took the apples!","Couldn't take item")
 room_Banana = RoomObject("Banan", player_Banana.return_item_with_amount(1),None, "Take Banana", "You took the bananas", "Couldn't take item")
 room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take Dice", "You took the dices!", "Couldn't take item")
 room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take Key", "You took the keys!", "Couldn't take item")
 room_Shovel = RoomObject("Shovel", shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
+room_Diamond = RoomObject("Diamond", player_Diamond.return_item_with_amount(1), None, "Take Diamond", "You took a diamond!", "Couldn't take item")
 
-items = [room_Apple,room_Banana,room_Dice,room_Key,room_Shovel]
+# Je met none pour ensuite gérer le remplissage à partir de random manager
+room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:")
+room_Hole = RoomObject("Hole", None, shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
+
+items = [room_Apple,room_Banana,room_Dice,room_Key, room_Diamond, room_Chest, room_Hole, room_Shovel]
 for item in items:
     if item.name not in room_items_dictionary:
         room_items_dictionary[item.name] = item
 
-room_generated_Inv = Inventory()
-
-room_generated_Inv.add_item(player_Banana.return_item_with_amount(2))
-room_generated_Inv.add_item(player_Key.return_item_with_amount(5))
-
-chest_Inv = Inventory()
-
-chest_Inv.add_item(player_Banana.return_item_with_amount(2))
-chest_Inv.add_item(player_Key.return_item_with_amount(5))
-chest_Inv.add_item(shovel)
-room_Chest = RoomObject("Chest", chest_Inv, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:")
-
-room_Hole = RoomObject("Hole", room_generated_Inv, shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
-
-
-room_generic_Inventory = Room_Inventory()
-room_generic_Inventory.addInventory(room_Apple)
-room_generic_Inventory.addInventory(room_Banana)
-room_generic_Inventory.addInventory(room_Dice)
-room_generic_Inventory.addInventory(room_Chest)
-room_generic_Inventory.addInventory(room_Hole)
-
-
-    
 
     
 

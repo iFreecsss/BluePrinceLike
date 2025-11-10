@@ -417,7 +417,7 @@ class Game:
             chosen_room.unlock_exit(entry_dir)
             
             #AJOUT DE l'INVENTAIRE
-            self.random_manager.assign_inventories_to_room(chosen_room)
+            self.random_manager.assign_inventories_to_room(chosen_room, self.player)
             ######################
 
             self.map.place_room(chosen_room, placement_pos)

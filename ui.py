@@ -113,7 +113,6 @@ class UI:
         self.dice_icon = pygame.image.load('Images/Icons/dice_icon.png').convert_alpha()
         self.dice_icon = pygame.transform.scale(self.dice_icon, (40, 40))
 
-        # icone clé, pièce, pas à venir ...
         self.item_icon_cache = {}
 
     def create_layout(self):
