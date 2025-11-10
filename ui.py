@@ -338,8 +338,6 @@ class UI:
             # Afficher le texte et l'icône
             self.display_surface.blit(cost_text, cost_text_rect)
             self.display_surface.blit(self.diamond_icon, diamond_icon_rect)
-
-            # Afficahge de l'isntruction de reroll seulement si on a des dés
             
             dice_icon_rect = self.dice_icon.get_rect(centery=title_rect.centery, right=panel.right - self.MARGIN)
             reroll_text_surface = self.inventory_font_small.render("Reroll (R)", True, self.COLOR_TEXT)
@@ -406,7 +404,6 @@ class UI:
                 # le temps est écoulé on efface le message
                 self.message_text = None
                 self.message_timer = 0
-    
 
     def draw_action_message(self, message):
         """
@@ -616,83 +613,6 @@ class UI:
                 current_x = start_x
                 current_y += icon_size + padding
 
-    def draw_items_to_collect(self):
-        panel = self.draw_room_rect
-
-        # Titre
-        title_text = self.font.render("Items to collect : ", True, self.COLOR_TEXT)
-        title_rect = title_text.get_rect(center=(panel.centerx, panel.top + self.MARGIN))
-        self.display_surface.blit(title_text, title_rect)
-
-        # On récupère l'index de l'objet sélectionné
-        current_index = self.data.get('current_floor_item_index', 0)
-        items_to_draw = self.data.get('items_on_floor', [])
-
-        if not items_to_draw:
-            return
-        
-        # Tailles de base
-        base_choice_width = 150
-        base_choice_height = 150
-        base_img_size = (120, 120)
-        scale_factor = 1.1
-
-        # Logique de layout
-        num_items = len(items_to_draw)
-        
-        # Calcule l'espacement pour centrer les N objets
-        total_item_width = (num_items * base_choice_width)
-        
-        if num_items == 1:
-            padding = (panel.width - total_item_width) // 2
-        else:
-            # On calcule l'espace total restant et on le divise par le nombre d'espaces (num_items + 1)
-            total_padding = (panel.width - total_item_width)
-            padding = total_padding // (num_items + 1) 
-
-        choice_y = panel.top + self.MARGIN + 80 
-
-        for i, item in enumerate(items_to_draw):
-            
-            is_selected = (i == current_index)
-
-            # Détermine les tailles dynamiques
-            if is_selected:
-                choice_width = int(base_choice_width * scale_factor)
-                choice_height = int(base_choice_height * scale_factor)
-                img_size = (int(base_img_size[0] * scale_factor), int(base_img_size[1] * scale_factor))
-            else:
-                choice_width = base_choice_width
-                choice_height = base_choice_height
-                img_size = base_img_size
-
-            # Position X de chaque objet
-            if num_items == 1:
-                choice_x = panel.left + padding
-            else:
-                choice_x = panel.left + padding + i * (base_choice_width + padding)
-                if i > 0:
-                     # S'il y a un objet sélectionné avant lui il faut décaler
-                     if current_index < i:
-                         diff = int(base_choice_width * (scale_factor - 1.0))
-                         choice_x += diff
-
-            # On centre le rect sur le point X calculé
-            choice_rect = pygame.Rect(0, 0, choice_width, choice_height)
-            choice_rect.center = (choice_x + base_choice_width // 2, choice_y + base_choice_height // 2)
-
-            img = pygame.image.load(item.image_path).convert_alpha()
-            img = pygame.transform.scale(img, img_size)
-        
-            # On centre l'image dans le cadre avec le décalage 
-            img_rect = img.get_rect(center=(choice_rect.centerx, choice_rect.centery - 10))
-            self.display_surface.blit(img, img_rect)
-
-            # Affichage du nom de l'item
-            item_name_text = self.inventory_font_large.render(item.name, True, self.COLOR_TEXT)
-            item_name_rect = item_name_text.get_rect(center=(choice_rect.centerx, choice_rect.bottom - 10))
-            self.display_surface.blit(item_name_text, item_name_rect)
-
     def draw_possible_actions(self):
         panel = self.draw_room_rect
 
@@ -721,13 +641,11 @@ class UI:
                 rect_height - 10
             )
 
-            # --- Only selected rect gets white outline ---
             if i == self.action_index:
                 pygame.draw.rect(self.display_surface, (255, 255, 255), rect, width=3, border_radius=10)
             else:
                 pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, rect, width=2, border_radius=10)
 
-            # --- Text (replace DEBUG later with actual action name) ---
             action_text = self.font.render(action_messages[i], True, self.COLOR_TEXT)
             text_rect = action_text.get_rect(center=rect.center)
             self.display_surface.blit(action_text, text_rect)

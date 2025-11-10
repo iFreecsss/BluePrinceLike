@@ -89,7 +89,7 @@ player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1) #15
 player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1) #70
 player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1) #5
 
-shovel = NonConsumableItem("Shovel", "Images/Icons/dice_icon.png", 1)
+shovel = NonConsumableItem("Shovel", "Images/Icons/shovel_icon.png", 1)
 
 player_Apple = RegenerativeItem("Apple", "Images/Icons/apple_icon.png", 1, player_Footsteps, 2)
 player_Banana = RegenerativeItem("Banana","Images/Icons/banana_icon.png", 1, player_Footsteps, 3)
