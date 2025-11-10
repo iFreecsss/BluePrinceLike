@@ -13,13 +13,11 @@ class Game:
         
         self.warning_message = None
 
-        self.player.inventory.add_item(
-            ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 10))
-        self.player.inventory.add_item(
-            ConsumableItem("Key", "Images/Icons/key_icon.png", 15))
-        self.player.inventory.add_item(
-            ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 70))
+        self.player.inventory.add_item(player_Diamond.return_item_with_amount(10))
+        self.player.inventory.add_item(player_Key.return_item_with_amount(15))
+        self.player.inventory.add_item(player_Footsteps.return_item_with_amount(70))
         self.player.inventory.add_item(player_Dice.return_item_with_amount(6))
+        self.player.inventory.add_item(player_Coin.return_item_with_amount(100))
         #self.player.inventory.add_item(
             #ConsumableItem("Dice", "Images/Icons/dice_icon.png", 5))
         #self.player.inventory.add_item(shovel.return_item_with_amount(1))
@@ -162,6 +160,10 @@ class Game:
             if self.player.use(player_Footsteps.return_item_with_amount(1)):
                 # si elle est déjà occupée avec une pièce on avance normalement
                 self.player.move(final_position)
+                
+                new_room = self.map.get_current_mapping()[self.player.position] # la salle où on vient d'arriver
+                new_room.on_entry(self) # On déclenche son effet d'entrée (self = game_logic)
+                
                 self.check_game_status() # on vérifie si on a gagné ou perdu
             else:
                 # Si plus de pas faudra implémenter le game over
@@ -408,7 +410,10 @@ class Game:
             return
         if player_diamonds >= room_cost:
             # Le joueur peut payer en diamants et en pas
+
             self.player.use(player_Diamond.return_item_with_amount(room_cost))
+            # On applique l'effet "on_draft" AVANT de payer le pas
+            chosen_room.on_draft(self)
             self.player.use(player_Footsteps.return_item_with_amount(1))
 
             # On récupère la direction d'entrée mémorisée
@@ -422,6 +427,13 @@ class Game:
 
             self.map.place_room(chosen_room, placement_pos)
             self.player.move(placement_pos)
+            
+            # on retire cette pièce de la pioche si allow_duplicates est False
+            self.random_manager.remove_room_from_deck(chosen_room.__class__)
+            
+            # On déclenche l'effet d'entrée de la pièce qu'on vient de placer
+            chosen_room.on_entry(self)
+            
             self.check_game_status()
             
             if self.game_state != "VICTORY":

@@ -88,6 +88,7 @@ player_Diamond = ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 1) #
 player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1) #15
 player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1) #70
 player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1) #5
+player_Coin = ConsumableItem("Coin", "Images/Icons/coin_icon.png", 1) #100
 
 shovel = NonConsumableItem("Shovel", "Images/Icons/shovel_icon.png", 1)
 

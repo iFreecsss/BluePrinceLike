@@ -134,7 +134,7 @@ room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take 
 room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take Key", "You took the keys!", "Couldn't take item")
 room_Shovel = RoomObject("Shovel", shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
 room_Diamond = RoomObject("Diamond", player_Diamond.return_item_with_amount(1), None, "Take Diamond", "You took a diamond!", "Couldn't take item")
-
+room_Coin = RoomObject("Coin", player_Coin.return_item_with_amount(1), None, "Take Coin", "You took a coin!", "Couldn't take item")
 # Je met none pour ensuite gérer le remplissage à partir de random manager
 room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:")
 room_Hole = RoomObject("Hole", None, shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
