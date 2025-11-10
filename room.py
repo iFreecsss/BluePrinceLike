@@ -1,5 +1,6 @@
-from item import ConsumableItem
+from item import *
 import numpy as np
+from inventory import *
 
 class RoomObject:
     """
@@ -20,6 +21,7 @@ class RoomObject:
         self.orientation = 0
         self.exit_locks = {}
         self.items_on_floor = []
+        self.inventories = Room_Inventory()
 
     def has_exits(self, direction):
 
@@ -130,6 +132,9 @@ class RoomObject:
             game_logic.warning_message = f"{current_msg} Nursery bonus: +5 Footsteps!"
         
         pass
+    
+    def get_inventories(self):
+        return self.inventories.get_inventories()
 
 class EntryHall(RoomObject):
     rarity = 'common' 
@@ -209,7 +214,7 @@ class Boudoir(RoomObject):
             game_logic.player.inventory.add_item(
                 ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 10)
             )
-            game_logic.warning_message = "Her Ladyship's favor: +10 Footsteps in the Boudoir!"
+            game_logic.warning_message = "Her Ladyship's favor: \n+10 Footsteps in the Boudoir!"
             # désactive le bonus après utilisation
             game_logic.random_manager.next_boudoir_bonus = False
 
@@ -270,7 +275,8 @@ class Chapel(RoomObject):
         """
         Retire 1 Pièce (Coin) au joueur s'il en a.
         """
-        if game_logic.player.inventory.use_consumable("Coin", 1):
+        if game_logic.player.inventory.get_quantity("Coin") >= 1:
+            game_logic.player.use(player_Coin.return_item_with_amount(1))
             game_logic.warning_message = "You pay tribute : -1 Coin."
         else:
             # L'effet s'active mais le joueur ne peut pas payer
@@ -635,7 +641,8 @@ class Weight_Room(RoomObject):
         steps_to_lose = current_steps // 2 # Arrondi à l'inférieur
         
         if steps_to_lose > 0:
-            game_logic.player.inventory.use_consumable("Footsteps", steps_to_lose)
+            steps_item_to_lose = player_Footsteps.return_item_with_amount(steps_to_lose)
+            game_logic.player.use(steps_item_to_lose)
             game_logic.warning_message = f"You feel exhausted : -{steps_to_lose} Footsteps!"
         else:
             game_logic.warning_message = "You feel exhausted but have no steps to lose."

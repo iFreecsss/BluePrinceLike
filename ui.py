@@ -31,6 +31,9 @@ class UI:
         self.message_timer = 0
         self.MESSAGE_DURATION = 1250
 
+        #Index pour les actions
+        self.action_index = 0
+
     def init_pygame(self):
         #Pygame window init
         pygame.init()
@@ -110,7 +113,6 @@ class UI:
         self.dice_icon = pygame.image.load('Images/Icons/dice_icon.png').convert_alpha()
         self.dice_icon = pygame.transform.scale(self.dice_icon, (40, 40))
 
-        # icone clé, pièce, pas à venir ...
         self.item_icon_cache = {}
 
     def create_layout(self):
@@ -336,8 +338,6 @@ class UI:
             # Afficher le texte et l'icône
             self.display_surface.blit(cost_text, cost_text_rect)
             self.display_surface.blit(self.diamond_icon, diamond_icon_rect)
-
-            # Afficahge de l'isntruction de reroll seulement si on a des dés
             
             dice_icon_rect = self.dice_icon.get_rect(centery=title_rect.centery, right=panel.right - self.MARGIN)
             reroll_text_surface = self.inventory_font_small.render("Reroll (R)", True, self.COLOR_TEXT)
@@ -404,7 +404,33 @@ class UI:
                 # le temps est écoulé on efface le message
                 self.message_text = None
                 self.message_timer = 0
-    
+
+    def draw_action_message(self, message):
+        """
+        Affiche le message d'avertissement au centre de la carte s'il existe
+        et si son minuteur n'est pas écoulé.
+        """
+        if self.message_text:
+            current_time = pygame.time.get_ticks()
+            
+            if current_time - self.message_timer < self.MESSAGE_DURATION:
+                
+                text_surface = self.message_font.render(message, True, self.COLOR_MESSAGE_TEXT)
+                text_rect = text_surface.get_rect(center=self.draw_room_rect.center) # centré sur le menu d'action
+                
+                # fond semi-transparent
+                bg_rect = text_rect.inflate(20, 10) # 20px de marge H, 10px de marge V
+                bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+                bg_surface.fill((0, 0, 0, 150)) # Noir semi-transparent
+                
+                self.display_surface.blit(bg_surface, bg_rect)
+                self.display_surface.blit(text_surface, text_rect)
+                
+            else:
+                # le temps est écoulé on efface le message
+                self.message_text = None
+                self.message_timer = 0
+
     def draw_victory_screen(self):
         """
         Affiche l'écran de victoire.
@@ -587,82 +613,42 @@ class UI:
                 current_x = start_x
                 current_y += icon_size + padding
 
-    def draw_items_to_collect(self):
+    def draw_possible_actions(self):
         panel = self.draw_room_rect
 
-        # Titre
-        title_text = self.font.render("Items to collect : ", True, self.COLOR_TEXT)
+        action_messages = self.data.get('roomactions', [])
+        self.action_index = self.data.get('action_index',0)
+        num_actions = len(action_messages)
+
+        if num_actions == 0:
+            return
+        title_text = self.font.render("Possible Actions :", True, self.COLOR_TEXT)
         title_rect = title_text.get_rect(center=(panel.centerx, panel.top + self.MARGIN))
         self.display_surface.blit(title_text, title_rect)
 
-        # On récupère l'index de l'objet sélectionné
-        current_index = self.data.get('current_floor_item_index', 0)
-        items_to_draw = self.data.get('items_on_floor', [])
+        top_margin = 100
+        available_height = panel.height - top_margin - self.MARGIN
+        rect_height = available_height // num_actions
+        rect_width = panel.width - 2 * self.MARGIN
+        start_y = panel.top + top_margin
 
-        if not items_to_draw:
-            return
-        
-        # Tailles de base
-        base_choice_width = 150
-        base_choice_height = 150
-        base_img_size = (120, 120)
-        scale_factor = 1.1
+        for i in range(num_actions):
+            rect_y = start_y + i * rect_height
+            rect = pygame.Rect(
+                panel.left + self.MARGIN,
+                rect_y,
+                rect_width,
+                rect_height - 10
+            )
 
-        # Logique de layout
-        num_items = len(items_to_draw)
-        
-        # Calcule l'espacement pour centrer les N objets
-        total_item_width = (num_items * base_choice_width)
-        
-        if num_items == 1:
-            padding = (panel.width - total_item_width) // 2
-        else:
-            # On calcule l'espace total restant et on le divise par le nombre d'espaces (num_items + 1)
-            total_padding = (panel.width - total_item_width)
-            padding = total_padding // (num_items + 1) 
-
-        choice_y = panel.top + self.MARGIN + 80 
-
-        for i, item in enumerate(items_to_draw):
-            
-            is_selected = (i == current_index)
-
-            # Détermine les tailles dynamiques
-            if is_selected:
-                choice_width = int(base_choice_width * scale_factor)
-                choice_height = int(base_choice_height * scale_factor)
-                img_size = (int(base_img_size[0] * scale_factor), int(base_img_size[1] * scale_factor))
+            if i == self.action_index:
+                pygame.draw.rect(self.display_surface, (255, 255, 255), rect, width=3, border_radius=10)
             else:
-                choice_width = base_choice_width
-                choice_height = base_choice_height
-                img_size = base_img_size
+                pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, rect, width=2, border_radius=10)
 
-            # Position X de chaque objet
-            if num_items == 1:
-                choice_x = panel.left + padding
-            else:
-                choice_x = panel.left + padding + i * (base_choice_width + padding)
-                if i > 0:
-                     # S'il y a un objet sélectionné avant lui il faut décaler
-                     if current_index < i:
-                         diff = int(base_choice_width * (scale_factor - 1.0))
-                         choice_x += diff
-
-            # On centre le rect sur le point X calculé
-            choice_rect = pygame.Rect(0, 0, choice_width, choice_height)
-            choice_rect.center = (choice_x + base_choice_width // 2, choice_y + base_choice_height // 2)
-
-            img = pygame.image.load(item.image_path).convert_alpha()
-            img = pygame.transform.scale(img, img_size)
-        
-            # On centre l'image dans le cadre avec le décalage 
-            img_rect = img.get_rect(center=(choice_rect.centerx, choice_rect.centery - 10))
-            self.display_surface.blit(img, img_rect)
-
-            # Affichage du nom de l'item
-            item_name_text = self.inventory_font_large.render(item.name, True, self.COLOR_TEXT)
-            item_name_rect = item_name_text.get_rect(center=(choice_rect.centerx, choice_rect.bottom - 10))
-            self.display_surface.blit(item_name_text, item_name_rect)
+            action_text = self.font.render(action_messages[i], True, self.COLOR_TEXT)
+            text_rect = action_text.get_rect(center=rect.center)
+            self.display_surface.blit(action_text, text_rect)
 
     def run(self):
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
@@ -707,6 +693,10 @@ class UI:
                         inputs.append("LEFT_ROOM")
                     elif event.key == pygame.K_RIGHT: 
                         inputs.append("RIGHT_ROOM")
+                    elif event.key == pygame.K_UP: 
+                        inputs.append("ARROW_UP")
+                    elif event.key == pygame.K_DOWN: 
+                        inputs.append("ARROW_DOWN")
                     elif event.key == pygame.K_RETURN: 
                         inputs.append("ENTER")
                     elif event.key == pygame.K_r:
@@ -748,8 +738,8 @@ class UI:
 
         if game_state == "DRAWING_ROOM":
             self.draw_room_choice_screen() 
-        elif game_state == "COLLECTING_ITEMS":
-            self.draw_items_to_collect()
+        elif game_state == "EXPLORING":
+            self.draw_possible_actions()
         
         if game_state == "SETTINGS":
             settings_inputs = self.draw_settings_menu(mouse_pos, mouse_pressed)
