@@ -13,14 +13,14 @@ class Game:
         
         self.warning_message = None
 
-        self.player.inventory.add_item(
-            ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 10))
-        self.player.inventory.add_item(
-            ConsumableItem("Key", "Images/Icons/key_icon.png", 15))
-        self.player.inventory.add_item(
-            ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 70))
-        self.player.inventory.add_item(
-            ConsumableItem("Dice", "Images/Icons/dice_icon.png", 5))
+        self.player.inventory.add_item(player_Diamond.return_item_with_amount(10))
+        self.player.inventory.add_item(player_Key.return_item_with_amount(15))
+        self.player.inventory.add_item(player_Footsteps.return_item_with_amount(70))
+        self.player.inventory.add_item(player_Dice.return_item_with_amount(6))
+        self.player.inventory.add_item(player_Coin.return_item_with_amount(100))
+        #self.player.inventory.add_item(
+            #ConsumableItem("Dice", "Images/Icons/dice_icon.png", 5))
+        #self.player.inventory.add_item(shovel.return_item_with_amount(1))
         
         # les pioches se retrouvent ici
         self.random_manager = RandomManager()
@@ -43,6 +43,10 @@ class Game:
 
         # pour la gestion des items au sol
         self.current_floor_item_index = 0
+        #index de l'action choisie
+        self.action_index = 0
+        self.possible_actions = 0
+        self.action_messages = []
 
         # params audio
         self.sound_to_play = None
@@ -117,7 +121,7 @@ class Game:
         if lock_level == 1:
             # Porte fermée normale (Niveau 1)
             # Si assez de clés
-            if self.player.inventory.use_consumable("Key", 1):
+            if self.player.use(player_Key.return_item_with_amount(1)):
                 self.warning_message = "You used 1 key to unlock the door."
                 current_room.unlock_exit(direction)
                 if target_room is not None:
@@ -129,8 +133,7 @@ class Game:
         
         elif lock_level == 2:
             # Porte fermée double tours (Niveau 2)
-            if self.player.inventory.get_quantity("Key") >= 2:
-                self.player.inventory.use_consumable("Key", 2)
+            if self.player.use(player_Key.return_item_with_amount(2)):
                 self.warning_message = "You used 2 keys to unlock the door."
                 current_room.unlock_exit(direction) # On déverrouille
                 if target_room is not None:
@@ -154,9 +157,13 @@ class Game:
             self.draw_new_rooms()
         else:
             self.sound_to_play = 'footsteps'
-            if self.player.inventory.use_consumable("Footsteps", 1):
+            if self.player.use(player_Footsteps.return_item_with_amount(1)):
                 # si elle est déjà occupée avec une pièce on avance normalement
                 self.player.move(final_position)
+                
+                new_room = self.map.get_current_mapping()[self.player.position] # la salle où on vient d'arriver
+                new_room.on_entry(self) # On déclenche son effet d'entrée (self = game_logic)
+                
                 self.check_game_status() # on vérifie si on a gagné ou perdu
             else:
                 # Si plus de pas faudra implémenter le game over
@@ -173,6 +180,21 @@ class Game:
             self.current_choice_index = (self.current_choice_index + 1) % 3
         elif input == "ENTER":
             self.select_room_choice(self.current_choice_index)
+
+    def handle_action_index(self, given_input):
+        if given_input == "ARROW_UP":
+            self.action_index = max(0,self.action_index-1)
+        
+        if given_input == "ARROW_DOWN":
+            self.action_index = min(self.possible_actions - 1,self.action_index+1)
+        
+        if given_input == "SPACE":
+            self.action_index = 0
+        
+        if given_input == "ENTER":
+            if self.action_index > self.possible_actions - 1:
+                self.action_index = self.possible_actions - 1
+
 
     def handle_inputs(self, inputs):
         self.sound_to_play = None
@@ -209,6 +231,8 @@ class Game:
             return
 
         if self.game_state == "EXPLORING":
+            #self.handle_possible_actions() #Regarde le nombre d'action possibles
+
             direction_change=["UP","DOWN","LEFT","RIGHT"]
             movement_confirmation = ["SPACE"]
 
@@ -218,7 +242,26 @@ class Game:
                 
                 if i in movement_confirmation:
                     self.player_movement(i)
+                    self.handle_action_index(i)
+            
+            
+            #Rajout de handle des objets et des inventaires.
+            action_selection=["ARROW_UP","ARROW_DOWN"]
+            action_confirmation = ["ENTER"]
 
+            current_room = self.map.get_current_mapping()[self.player.position]
+            inventory = current_room.inventories
+            self.possible_actions = inventory.get_action_number()
+
+            for i in inputs:
+                if i in action_selection:
+                    self.handle_action_index(i) #Modifie l'index de l'action
+                if i in action_confirmation:
+                    self.warning_message = inventory.handle_action(self.player,self.action_index)
+                    self.possible_actions = inventory.get_action_number()
+                    self.handle_action_index(i)
+                        
+                        
         elif self.game_state == "DRAWING_ROOM":
             # marche de la même façon que pour l'exploration
             for i in inputs:
@@ -230,6 +273,10 @@ class Game:
                     break
 
         elif self.game_state == "COLLECTING_ITEMS":
+            #Pour le débug, on apparente le game_state COLLECTING_ITEMS à EXPLORING
+            self.game_state = "EXPLORING"
+            pass
+        
             current_room = self.map.get_current_mapping()[self.player.position]
             items_on_floor = current_room.get_items_on_floor()
 
@@ -275,7 +322,7 @@ class Game:
     def handle_reroll(self):
         """Tente de relancer le tirage des pièces en utilisant un dé"""
 
-        if self.player.inventory.use_consumable("Dice", 1):
+        if self.player.use(player_Dice.return_item_with_amount(1)):
             self.warning_message = "You used 1 Dice to reroll room choices."
             self.sound_to_play = 'reroll'
             self.draw_new_rooms()
@@ -297,14 +344,12 @@ class Game:
         self.data['current_choice_index'] = self.current_choice_index
         self.data['warning_message'] = self.warning_message
         self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
-        self.data['inventory_items'] = self.player.inventory.get_all_items()
         
-        # items au sol dans la salle actuelle
-        self.data['items_on_floor'] = []
-        if self.data['game_state'] == "COLLECTING_ITEMS":
-            current_room = self.map.get_current_mapping()[self.player.position]
-            self.data['items_on_floor'] = current_room.get_items_on_floor()
-            self.data['current_floor_item_index'] = self.current_floor_item_index
+        # items dans la salle
+        current_room = self.map.get_current_mapping()[self.player.position]
+        self.data['roomactions'] = current_room.inventories.get_action_messages()
+        self.data['action_index'] = self.action_index
+        self.data['inventory_items'] = self.player.inventory.get_all_items()
         # données audio
         self.data['sound_to_play'] = self.sound_to_play
         self.data['music_volume'] = self.music_volume
@@ -365,44 +410,41 @@ class Game:
             return
         if player_diamonds >= room_cost:
             # Le joueur peut payer en diamants et en pas
-            self.player.inventory.use_consumable("Diamond", room_cost)
-            self.player.inventory.use_consumable("Footsteps", 1)
+
+            self.player.use(player_Diamond.return_item_with_amount(room_cost))
+            # On applique l'effet "on_draft" AVANT de payer le pas
+            chosen_room.on_draft(self)
+            self.player.use(player_Footsteps.return_item_with_amount(1))
 
             # On récupère la direction d'entrée mémorisée
             entry_dir = self.pending_entry_direction
             # On déverrouille cette porte sur la nouvelle pièce
             chosen_room.unlock_exit(entry_dir)
+            
+            #AJOUT DE l'INVENTAIRE
+            self.random_manager.assign_inventories_to_room(chosen_room, self.player)
+            ######################
 
             self.map.place_room(chosen_room, placement_pos)
             self.player.move(placement_pos)
+            
+            # on retire cette pièce de la pioche si allow_duplicates est False
+            self.random_manager.remove_room_from_deck(chosen_room.__class__)
+            
+            # On déclenche l'effet d'entrée de la pièce qu'on vient de placer
+            chosen_room.on_entry(self)
+            
             self.check_game_status()
             
             if self.game_state != "VICTORY":
-                self.check_for_room_items(chosen_room)
-                if self.game_state != "COLLECTING_ITEMS":
-                    # Si on n'est pas passé en mode collecte d'items
 
-                    # réinitialse l'état du jeu par défaut
-                    self.game_state = "EXPLORING"
+                self.game_state = "EXPLORING"
                 self.room_choices = []
                 self.pending_placement_position = None
         else:
             # Le joueur ne peut pas payer
             self.warning_message = f"Not enough diamonds ! You need {room_cost - player_diamonds} more."
             # On ne change pas d'état, le joueur reste sur l'écran de choix
-
-    def check_for_room_items(self, room):
-        """
-        Vérifie si la salle contient des objets au sol.
-        Si oui, change l'état du jeu en mode collecte d'objets.
-        """
-        if room.name in ["Entrance_Hall", "AnteChamber"]:
-            # Ces salles ne contiennent pas d'objets
-            return
-        if room.get_items_on_floor():
-            # True si la salle contient des objets au sol
-            self.game_state = "COLLECTING_ITEMS"
-            self.current_floor_item_index = 0
     
     def find_best_rotation(self, room, position, must_enter_direction):
         """

@@ -1,7 +1,9 @@
 import random
 from room import *
 from item import *
-
+from inventory import *
+from player import *
+import copy
 # Définition des poids pour les raretés
 RARITY_WEIGHTS = {
     'common': 10,
@@ -21,34 +23,109 @@ LOCK_PROB = {
     2: (0.40, 0.30), # 40% niv2, 30% niv1, 30% niv0
     1: (0.50, 0.30)  # 50% niv2, 30% niv1, 20% niv0
 }
+
 class RandomManager:
     
     def __init__(self):
         # doit contenir les classes des salles et non les instances
-        self.room_deck = [
+        self.full_room_deck = [
             Aquarium, Attic, Ballroom, Billiard_Room, 
             Boiler_Room, Chamber_of_Mirrors, Closet, 
             Coat_Check, Conference_Room, Parlor, Security, 
-            Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom
+            Foyer, Kitchen, Dining_Room, Passageway, Master_Bedroom,
+            Bedroom, Chapel, Weight_Room, Office, Patio, Greenhouse,
+            Furnace, Maids_Chamber, Veranda, The_Pool, Terrace,
+            Boudoir, Guest_Bedroom, Her_Ladyships_Chamber, Nursery,
+            Rotunda, Secret_Garden, Secret_Passage, Servants_Quarters,
+            Corridor, East_Wing_Hall, Hallway, West_Wing_Hall
         ]
-        self.item_spawn_chance = 0.6
-
-        self.floor_items = [
-            (Apple, 20),
-            (Banana, 15),
-            (Diamond, 10),
-            (Key, 5),
-            (Dice, 5)
-        ]
-
-        self.items_classes = [item[0] for item in self.floor_items]
-        self.items_weights = [item[1] for item in self.floor_items]
         
+
+        # la pioche qui se vide
+        self.current_room_deck = self.full_room_deck.copy()
+        
+        # par défaut le jeu retire les pièces de la pioche : pas de doublons
+        self.allow_duplicates = False
+        
+        # par défaut les couloirs ont des serrures normales
+        self.hallways_are_unlocked = False
+        
+        self.nursery_bonus_active = False
+        self.next_boudoir_bonus = False
+        self.next_closet_bonus = False
+        
+        self.item_spawn_chance = 0.6
+        
+        
+        # Stocke les multiplicateurs de poids pour chaque type de salle
+        # Par défaut, tout est à 1.0
+        self.type_weight_multipliers = {
+            'Red Room': 1.0,
+            'Green Room': 1.0,
+            'Shop': 1.0,
+            'Bedroom': 1.0,
+            'Room': 1.0,
+            'Secret Room' : 1.0
+        }
+        
+        # Stocke les multiplicateurs pour la CHANCE qu'une salle contienne des objets
+        self.item_spawn_multipliers = {
+            'Red Room': 1.0,
+            'Green Room': 1.0,
+            'Shop': 1.0,
+            'Bedroom': 1.0,
+            'Room': 1.0,
+            'Hallway': 1.0,
+            'Secret Room' : 1.0
+        }
+    
+
+        # Toutes les actions possibles qu'une salle peut contenir
+        self.possible_room_actions = [
+            room_Apple, room_Banana, room_Dice, room_Key, 
+            room_Chest, room_Hole, room_None
+        ]
+    
+
+        self.action_weights = [
+            20, # Apple
+            15, # Banana
+            5, # Dice
+            10, # Key
+            5, # Chest
+            5, # Hole
+            30 # Rien
+        ]
+        
+        self.chest_loot_pool = [
+            (room_Apple, 10),
+            (room_Banana, 10),
+            (room_Diamond, 10), # (action, proba)
+            (room_Key, 15),
+            (room_Dice, 15),
+            (room_Shovel, 40) # la pelle ne peut apparaître que dans un coffre ou casier plus tard
+        ]
+
+        self.chest_loot_items = [item[0] for item in self.chest_loot_pool]
+        self.chest_loot_weights = [item[1] for item in self.chest_loot_pool]
+
     def is_room_placable(self, RoomClass, current_map, position, direction_of_entry):
         """
         Vérifie si une *Classe* de pièce peut être placée.
         Teste les 4 rotations pour trouver au moins une orientation valide.
         """
+        # Vérification des contraintes de placement
+        x, y = position
+        constraints = RoomClass.placement_constraints
+        
+        # la carte fait 5 de large (0 à 4)
+        if constraints == "WEST":
+            if x > 1: # Doit être dans les colonnes 0 ou 1
+                return False
+        elif constraints == "EAST":
+            if x < 3: # Doit être dans les colonnes 3 ou 4
+                return False
+        
         temp_room = RoomClass() # instance temporaire pour les tests de rotation
         
         for rotation in range(4):
@@ -71,9 +148,17 @@ class RandomManager:
         Prend en compte la rareté.
         """
         
+        # On choisit la liste source en fonction de l'effet
+        if self.allow_duplicates:
+            # effet "Chamber of Mirrors" est actif : on pioche dans la liste complète
+            source_deck = self.full_room_deck
+        else:
+            # comportment normal : on pioche dans la liste qui se vide
+            source_deck = self.current_room_deck
+        
         # Tri la liste complète pour garder que les pièces plaçables
         placable_room_classes = []
-        for RoomClass in self.room_deck:
+        for RoomClass in source_deck:
             if self.is_room_placable(RoomClass, current_map, position, direction_of_entry):
                 placable_room_classes.append(RoomClass)
         
@@ -81,6 +166,11 @@ class RandomManager:
             # Cas horrible aucune pièce n'est plaçable normalement ça ne devrait jamais arriver
             return []
         
+        # Fonction pour calculer le poids final d'une pièce
+        def get_weighted_rarity(RoomClass):
+            base_weight = RARITY_WEIGHTS.get(RoomClass.rarity, 10)
+            type_multiplier = self.type_weight_multipliers.get(RoomClass.room_type, 1.0)
+            return base_weight * type_multiplier
 
         placable_free_rooms = [
             RoomClass for RoomClass in placable_room_classes 
@@ -92,9 +182,9 @@ class RandomManager:
         if not placable_free_rooms:
             # Si aucune pièce gratuite n'est dispo on tire juste 3 pièces normales pour éviter de crash
             weights = [
-                RARITY_WEIGHTS.get(RoomClass.rarity) 
+                get_weighted_rarity(RoomClass) 
                 for RoomClass in placable_room_classes
-            ]
+                ]
             
             # Là j'utilise .choices pour faire un tirage avec remise donc on a possiblement des doublons dans la 
             # même sélection de 3 pièces mais on peut utiliser .sample si on veut absolument pas de doublons
@@ -107,9 +197,9 @@ class RandomManager:
         else:
             # on récupère les poids des pièces dont le cost=0
             free_weights = [
-                RARITY_WEIGHTS.get(RoomClass.rarity) 
+                get_weighted_rarity(RoomClass) 
                 for RoomClass in placable_free_rooms
-            ]
+                ]
 
             # Pièce gratuite garantie (on en tire que 1)
             guaranteed_free_room = random.choices(
@@ -122,9 +212,9 @@ class RandomManager:
             
             # On récupère tous les poids des pièces quelque soit leur cost
             all_weights = [
-                RARITY_WEIGHTS.get(RoomClass.rarity) 
+                get_weighted_rarity(RoomClass)
                 for RoomClass in placable_room_classes
-            ]
+                ]
             # Parmi toutes les pièces (y compris les cost=0) on en tire 2 autres
             other_rooms = random.choices(
                 placable_room_classes, 
@@ -141,23 +231,7 @@ class RandomManager:
 
         for RoomClass in chosen_classes:
             instance = RoomClass()
-
-            if random.random() < self.item_spawn_chance:
-                num_items_to_spawn = random.choices([2,3,4], weights=[50,30,20], k=1)[0]
-
-                for _ in range(num_items_to_spawn):
-                    # Tirage d'un objet à faire apparaître au sol
-                    item_class_to_spawn = random.choices(
-                        self.items_classes,
-                        weights=self.items_weights,
-                        k=1
-                    )[0]
-                    item_instance = item_class_to_spawn()
-
-                    if isinstance(item_instance, (Diamond, Key, Dice)):
-                        item_instance.quantity = random.choices([1,2,5], weights=[74,25,1], k=1)[0]
-                    instance.add_item_to_floor(item_instance)
-                    
+            
             # On assigne les blocages en fonction de la ligne (pos_y)
             self.assign_locks_to_room(instance, pos_y)
             chosen_instances.append(instance)
@@ -195,4 +269,132 @@ class RandomManager:
         """
         for base_direction in room_instance.base_exits:
             lock_level = self.calculate_lock_level(y_coordinate)
+            
+            # vérifie d'abord si c'est un Corridor
+            if room_instance.name == "Corridor":
+                lock_level = 0
+            
+            # si l'effet Foyer est actif et que c'est un Hallway, on force le déverrouillage
+            if self.hallways_are_unlocked and room_instance.room_type == 'Hallway':
+                lock_level = 0
+            
             room_instance.set_exit_lock(base_direction, lock_level)
+    
+    def remove_room_from_deck(self, room_class_to_remove):
+        """
+        Retire une pièce de la pioche actuelle (current_room_deck), 
+        sauf si l'effet de la Chamber of Mirrors (allow_duplicates) est actif.
+        """
+        # Si l'effet est actif, on ne fait rien, la pièce reste.
+        if self.allow_duplicates:
+            return
+
+        # Sinon on retire la pièce de la pioche
+        if room_class_to_remove in self.current_room_deck:
+            self.current_room_deck.remove(room_class_to_remove)
+
+    def assign_inventories_to_room(self, room_instance: RoomObject, player):
+        """
+        Assigne un inventaire d'ACTIONS aléatoire à une salle
+        """
+
+        base_spawn_chance = self.item_spawn_chance # la chance de base globale
+        
+        # le multiplicateur spécifique au type de cette salle
+        type_multiplier = self.item_spawn_multipliers.get(room_instance.room_type, 1.0)
+        
+        final_spawn_chance = base_spawn_chance * type_multiplier # calcule de la chance finale
+        final_spawn_chance = min(final_spawn_chance, 1.0) # on s'assure que la chance ne dépasse pas 100%
+        
+        if random.random() < final_spawn_chance:
+            
+            num_items_to_spawn = random.choices([2,3,4], weights=[50,30,20], k=1)[0]
+
+        
+            # Crée un nouvel inventaire de salle vide
+            new_room_inventory = Room_Inventory()
+
+            # Tire N actions aléatoires depuis notre pool d'objets
+            chosen_actions = random.choices(
+                self.possible_room_actions,
+                weights=self.action_weights, 
+                k=num_items_to_spawn
+            )
+
+            # Ajoute ces actions à l'inventaire de la salle
+            for action in chosen_actions:
+                
+                new_action_copy = copy.deepcopy(action)
+                # Si l'action est "Nothing", on ne l'ajoute tout simplement pas
+                # à la liste des actions de la salle.
+                if new_action_copy.name == "Nothing":
+                    continue
+                # Si l'action est un coffre, on génère son inventaire
+                if new_action_copy.name == "Chest":
+                    # On génère un inventaire de butin aléatoire
+                    loot_inv = self.generate_random_loot_inventory(player)
+                    # On assigne cet inventaire à l'attribut item du coffre
+                    new_action_copy.item = loot_inv
+
+                new_room_inventory.addInventory(new_action_copy)
+        
+        # Assigne ce nouvel inventaire à la salle
+            room_instance.inventories = new_room_inventory
+
+    def generate_random_loot_inventory(self, player):
+        """
+        Crée et retourne un nouvel objet Inventory() avec ressources random (pour chest et casier)
+        """
+        loot_inventory = Inventory()
+        
+        # Le coffre contiendra entre 1 et 3 items
+        num_items = random.randint(2, 3) 
+        
+        items_to_add = random.choices(
+            self.chest_loot_items,
+            weights=self.chest_loot_weights,
+            k=num_items
+        )
+        
+        added_items = 0
+
+        for item_template in items_to_add:
+            
+            # On copie l'Item contenu dans le RoomObject
+            item_copy = copy.deepcopy(item_template.item) 
+            
+            if type(item_copy) == NonConsumableItem:
+                # On vérifie l'inventaire du joueur
+                if player.inventory.get_quantity(item_copy.name) == 0: 
+                    item_copy.quantity = 1
+                    loot_inventory.add_item(item_copy)
+                    added_items += 1
+                else:
+                    # Le joueur a déjà une pelle
+                    pass
+
+            elif item_copy.name in ["Diamond", "Key", "Dice", "Apple", "Banana"]:
+                item_copy.quantity = random.randint(1, 2)
+                loot_inventory.add_item(item_copy)
+                added_items += 1
+            
+        # Si après la boucle on n'a rien ajouté
+        if added_items == 0:
+            
+            # On crée un pool de secours sans la pelle
+            non_shovel_pool = []
+            non_shovel_weights = []
+            
+            for i, item in enumerate(self.chest_loot_items):
+                if item.name != "Shovel":
+                    non_shovel_pool.append(item)
+                    non_shovel_weights.append(self.chest_loot_weights[i])
+
+            # On tire un item de secours
+            if non_shovel_pool: 
+                backup_item_template = random.choices(non_shovel_pool, weights=non_shovel_weights, k=1)[0]
+                item_copy = copy.deepcopy(backup_item_template.item)
+                item_copy.quantity = random.randint(1, 2) 
+                loot_inventory.add_item(item_copy)
+            
+        return loot_inventory

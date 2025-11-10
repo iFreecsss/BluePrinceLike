@@ -1,4 +1,5 @@
 from inventory import *
+from item import *
 
 class Player:
     """
@@ -27,4 +28,24 @@ class Player:
     
     def face(self,direction):
         self.direction = direction
+    def check_Item(self,condition : Item, item: Item):
+        inventory = self.inventory.inventory
+        if not condition: 
+            if item.name in inventory:
+                inventory[item.name].add(item.quantity) 
+            else:
+                item.use(self, item.quantity)
+            return True
+        elif condition.name in inventory:
+            return self.use(item)
+        else:
+            return False
+        
+    def use(self, item : Item):
+        if item and (not isinstance(item,Inventory)):
+            inventory = self.inventory.inventory
+            result = item.use(self, item.quantity)
+            return result
+        else:
+            return True
     
