@@ -23,6 +23,7 @@ LOCK_PROB = {
     2: (0.40, 0.30), # 40% niv2, 30% niv1, 30% niv0
     1: (0.50, 0.30)  # 50% niv2, 30% niv1, 20% niv0
 }
+
 class RandomManager:
     
     def __init__(self):
@@ -261,9 +262,9 @@ class RandomManager:
             # On copie l'Item contenu dans le RoomObject
             item_copy = copy.deepcopy(item_template.item) 
             
-            if item_copy.name == "Shovel":
+            if type(item_copy) == NonConsumableItem:
                 # On vérifie l'inventaire du joueur
-                if player.inventory.get_quantity("Shovel") == 0: 
+                if player.inventory.get_quantity(item_copy.name) == 0: 
                     item_copy.quantity = 1
                     loot_inventory.add_item(item_copy)
                     added_items += 1
