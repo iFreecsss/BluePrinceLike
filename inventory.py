@@ -133,7 +133,7 @@ room_None = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Tak
 room_Apple = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Take Apple", "You took the apples!","Couldn't take item")
 room_Banana = RoomObject("Banan", player_Banana.return_item_with_amount(1),None, "Take Banana", "You took the bananas", "Couldn't take item")
 room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take Dice", "You took the dices!", "Couldn't take item")
-room_Key = RoomObject("Key",player_Dice.return_item_with_amount(1),None,"Take Key", "You took the keys!", "Couldn't take item")
+room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take Key", "You took the keys!", "Couldn't take item")
 room_Shovel = RoomObject("Shovel", shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
 
 items = [room_Apple,room_Banana,room_Dice,room_Key,room_Shovel]
@@ -142,9 +142,16 @@ for item in items:
         room_items_dictionary[item.name] = item
 
 room_generated_Inv = Inventory()
+
 room_generated_Inv.add_item(player_Banana.return_item_with_amount(2))
 room_generated_Inv.add_item(player_Key.return_item_with_amount(5))
-room_Chest = RoomObject("Chest", room_generated_Inv, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:")
+
+chest_Inv = Inventory()
+
+chest_Inv.add_item(player_Banana.return_item_with_amount(2))
+chest_Inv.add_item(player_Key.return_item_with_amount(5))
+chest_Inv.add_item(shovel)
+room_Chest = RoomObject("Chest", chest_Inv, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:")
 
 room_Hole = RoomObject("Hole", room_generated_Inv, shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
 
@@ -153,7 +160,6 @@ room_generic_Inventory = Room_Inventory()
 room_generic_Inventory.addInventory(room_Apple)
 room_generic_Inventory.addInventory(room_Banana)
 room_generic_Inventory.addInventory(room_Dice)
-room_generic_Inventory.addInventory(room_Shovel)
 room_generic_Inventory.addInventory(room_Chest)
 room_generic_Inventory.addInventory(room_Hole)
 

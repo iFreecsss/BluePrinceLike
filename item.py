@@ -59,6 +59,9 @@ class NonConsumableItem(Item):
     def __init__(self, name, image_path,quantity=1):
         super().__init__(name, image_path, quantity)
 
+    def add(self,amount):
+        pass
+
     def use(self, player, amount):
         """
         Cette fonction renvoie True, cela vient du fait que si l'utilisateur arrive a utiliser l'objet cela veut dire qu'il existe dans son inventaire.
@@ -70,6 +73,9 @@ class RegenerativeItem(Item):
     def __init__(self, name, image_path,quantity=1, regenerate : Item = None, amount=1):
         super().__init__(name, image_path, quantity)
         self.regenerate = regenerate.return_item_with_amount(amount)
+        
+    def add(self,amount):
+        pass
 
     def use(self, player, amount):
         for _ in range(self.quantity):

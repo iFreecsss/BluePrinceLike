@@ -184,10 +184,14 @@ class Game:
             self.action_index = max(0,self.action_index-1)
         
         if given_input == "ARROW_DOWN":
-            self.action_index = min(self.possible_actions,self.action_index+1)
+            self.action_index = min(self.possible_actions - 1,self.action_index+1)
         
         if given_input == "SPACE":
             self.action_index = 0
+        
+        if given_input == "ENTER":
+            if self.action_index > self.possible_actions - 1:
+                self.action_index = self.possible_actions - 1
 
 
     def handle_inputs(self, inputs):
@@ -245,13 +249,15 @@ class Game:
 
             current_room = self.map.get_current_mapping()[self.player.position]
             inventory = current_room.inventories
-            self.possible_actions = inventory.get_action_number() - 1
+            self.possible_actions = inventory.get_action_number()
 
             for i in inputs:
                 if i in action_selection:
                     self.handle_action_index(i) #Modifie l'index de l'action
                 if i in action_confirmation:
                     self.warning_message = inventory.handle_action(self.player,self.action_index)
+                    self.possible_actions = inventory.get_action_number()
+                    self.handle_action_index(i)
                         
                         
         elif self.game_state == "DRAWING_ROOM":
