@@ -357,7 +357,7 @@ class Greenhouse(RoomObject):
         """
         # On multiplie par 3 la probabilité des Green Rooms
         game_logic.random_manager.type_weight_multipliers['Green Room'] *= 3.0
-        game_logic.warning_message = "The air feels fresher. More chance to draft Green Rooms."
+        game_logic.warning_message = "The air feels fresher. \n More chance to draft Green Rooms."
 
 class Guest_Bedroom(RoomObject):
     rarity = 'common'
@@ -395,7 +395,7 @@ class Her_Ladyships_Chamber(RoomObject):
         # active les bonus pour la prochaine visite
         game_logic.random_manager.next_boudoir_bonus = True
         game_logic.random_manager.next_closet_bonus = True
-        game_logic.warning_message = "Her Ladyship is pleased. Bonuses await in the Boudoir and Closet."
+        game_logic.warning_message = "Her Ladyship is pleased. \nBonuses await in the Boudoir and Closet."
 
 class Kitchen(RoomObject):
     rarity = 'common'
@@ -462,7 +462,7 @@ class Nursery(RoomObject):
         super().on_draft(game_logic)
         
         game_logic.random_manager.nursery_bonus_active = True
-        game_logic.warning_message = "Nursery built! Future Bedrooms will grant +5 Footsteps."
+        game_logic.warning_message = "Nursery built! \nFuture Bedrooms will grant +5 Footsteps."
 
 class Office(RoomObject):
     rarity = 'common'
