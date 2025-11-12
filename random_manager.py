@@ -81,25 +81,21 @@ class RandomManager:
     
 
         # Toutes les actions possibles qu'une salle peut contenir
-        self.possible_room_actions = [
-            room_Apple, room_Banana, room_Dice, room_Key, 
-            room_Chest, room_Hole, room_None, room_Coin, room_charm_chroma, room_Shovel
-        ]
-    
-
-        self.action_weights = [
-            20, # Apple
-            15, # Banana
-            5, # Dice
-            10, # Key
-            5, # Chest
-            5, # Hole
-            20, # Rien
-            10, # Coin
-            0.1, # Charm Chroma
-            0.1 # Shovel
-        ]
         
+        self.room_action_pool = [
+            (room_Apple, 20),
+            (room_Banana, 15),
+            (room_Dice, 5),
+            (room_Key, 10),
+            (room_Chest, 5),
+            (room_Hole, 5),
+            (room_None, 20),
+            (room_Coin, 10)
+        ]
+
+        self.room_actions = [item[0] for item in self.room_action_pool]
+        self.action_weights = [item[1] for item in self.room_action_pool]
+
         self.chest_loot_pool = [
             (room_Apple, 10),
             (room_Banana, 10),
@@ -331,12 +327,12 @@ class RandomManager:
             actions_weights = [30, 40, 30]
             actions_choices = [3, 4, 5]
 
-        final_spawn_chance = base_spawn_chance * type_multiplier # calcule de la chance finale
+        final_spawn_chance = base_spawn_chance * type_multiplier * charm_multiplier # calcule de la chance finale
         final_spawn_chance = min(final_spawn_chance, 1.0) # on s'assure que la chance ne dépasse pas 100%
         
         if random.random() < final_spawn_chance:
             
-            num_items_to_spawn = random.choices([2,3,4], weights=[50,30,20], k=1)[0]
+            num_items_to_spawn = random.choices(actions_choices, weights=actions_weights, k=1)[0]
 
         
             # Crée un nouvel inventaire de salle vide
@@ -344,7 +340,7 @@ class RandomManager:
 
             # Tire N actions aléatoires depuis notre pool d'objets
             chosen_actions = random.choices(
-                self.possible_room_actions,
+                self.room_actions,
                 weights=self.action_weights, 
                 k=num_items_to_spawn
             )
@@ -414,9 +410,6 @@ class RandomManager:
                     item_copy.quantity = 1
                     loot_inventory.add_item(item_copy)
                     added_items += 1
-                else:
-                    # Le joueur a déjà une pelle
-                    pass
 
             elif item_copy.name in ["Diamond", "Key", "Dice", "Apple", "Banana", "Coin"]:
                 item_copy.quantity = random.randint(1, 2)
