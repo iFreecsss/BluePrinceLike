@@ -87,7 +87,7 @@ class RandomManager:
             (room_Banana, 15),
             (room_Dice, 5),
             (room_Key, 10),
-            (room_Chest, 5),
+            (room_Chest, 85),
             (room_Hole, 5),
             (room_None, 20),
             (room_Coin, 10)
@@ -104,7 +104,8 @@ class RandomManager:
             (room_Dice, 15),
             (room_Shovel, 40), # la pelle ne peut apparaître que dans un coffre ou casier plus tard
             (room_Coin, 20),
-            (room_charm_chroma, 5)
+            (room_charm_chroma, 5),
+            (room_metal_detector, 5)
         ]
 
         self.chest_loot_items = [item[0] for item in self.chest_loot_pool]
@@ -118,8 +119,8 @@ class RandomManager:
             (room_Key, 15),
             (room_Dice, 15),
             (room_Coin, 20),
-            (room_charm_chroma, 20)
-
+            (room_charm_chroma, 10),
+            (room_metal_detector, 10)
         ]
         self.hole_loot_items = [item[0] for item in self.hole_loot_pool]
         self.hole_loot_weights = [item[1] for item in self.hole_loot_pool]

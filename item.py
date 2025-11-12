@@ -90,8 +90,9 @@ player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png"
 player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1) 
 player_Coin = ConsumableItem("Coin", "Images/Icons/coin_icon.png", 1) 
 
-shovel = NonConsumableItem("Shovel", "Images/Icons/shovel_icon.png", 1)
-charm_chroma = NonConsumableItem("Charm Chroma", "Images/Icons/charm_chroma_icon.png", 1)
+player_shovel = NonConsumableItem("Shovel", "Images/Icons/shovel_icon.png", 1)
+player_charm_chroma = NonConsumableItem("Charm Chroma", "Images/Icons/charm_chroma_icon.png", 1)
+player_metal_detector = NonConsumableItem("Metal Detector", "Images/Icons/metal_detector_icon.png", 1)
 
 player_Apple = RegenerativeItem("Apple", "Images/Icons/apple_icon.png", 1, player_Footsteps, 2)
 player_Banana = RegenerativeItem("Banana","Images/Icons/banana_icon.png", 1, player_Footsteps, 3)
