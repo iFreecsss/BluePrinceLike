@@ -138,8 +138,10 @@ room_Coin = RoomObject("Coin", player_Coin.return_item_with_amount(1), None, "Ta
 # Je met none pour ensuite gérer le remplissage à partir de random manager
 room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:")
 room_Hole = RoomObject("Hole", None, shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
+room_charm_chroma = RoomObject("Charm Chroma", charm_chroma, None, "Take Charm", "You took the Charm!", "Couldn't take item")
+room_Shovel = RoomObject("Shovel", shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
 
-items = [room_Apple,room_Banana,room_Dice,room_Key, room_Diamond, room_Chest, room_Hole, room_Shovel]
+items = [room_Apple,room_Banana,room_Dice,room_Key, room_Diamond, room_Chest, room_Hole, room_Shovel, room_Coin, room_charm_chroma]
 for item in items:
     if item.name not in room_items_dictionary:
         room_items_dictionary[item.name] = item

@@ -83,7 +83,7 @@ class RandomManager:
         # Toutes les actions possibles qu'une salle peut contenir
         self.possible_room_actions = [
             room_Apple, room_Banana, room_Dice, room_Key, 
-            room_Chest, room_Hole, room_None, room_Coin
+            room_Chest, room_Hole, room_None, room_Coin, room_charm_chroma, room_Shovel
         ]
     
 
@@ -95,7 +95,9 @@ class RandomManager:
             5, # Chest
             5, # Hole
             20, # Rien
-            10 # Coin
+            10, # Coin
+            0.1, # Charm Chroma
+            0.1 # Shovel
         ]
         
         self.chest_loot_pool = [
@@ -105,7 +107,8 @@ class RandomManager:
             (room_Key, 15),
             (room_Dice, 15),
             (room_Shovel, 40), # la pelle ne peut apparaître que dans un coffre ou casier plus tard
-            (room_Coin, 20)
+            (room_Coin, 20),
+            (room_charm_chroma, 5)
         ]
 
         self.chest_loot_items = [item[0] for item in self.chest_loot_pool]
@@ -118,10 +121,12 @@ class RandomManager:
             (room_Diamond, 10), # (action, proba)
             (room_Key, 15),
             (room_Dice, 15),
-            (room_Coin, 20)
+            (room_Coin, 20),
+            (room_charm_chroma, 20)
+
         ]
-        self.hole_loot_items = [item[0] for item in self.chest_loot_pool]
-        self.hole_loot_weights = [item[1] for item in self.chest_loot_pool]
+        self.hole_loot_items = [item[0] for item in self.hole_loot_pool]
+        self.hole_loot_weights = [item[1] for item in self.hole_loot_pool]
 
     def is_room_placable(self, RoomClass, current_map, position, direction_of_entry):
         """
@@ -317,6 +322,15 @@ class RandomManager:
         # le multiplicateur spécifique au type de cette salle
         type_multiplier = self.item_spawn_multipliers.get(room_instance.room_type, 1.0)
         
+        charm_multiplier = 1.0
+        actions_weights = [50, 30, 20]
+        actions_choices = [2, 3, 4]
+
+        if player.inventory.get_quantity("Charm Chroma") > 0:
+            charm_multiplier = 1.5
+            actions_weights = [30, 40, 30]
+            actions_choices = [3, 4, 5]
+
         final_spawn_chance = base_spawn_chance * type_multiplier # calcule de la chance finale
         final_spawn_chance = min(final_spawn_chance, 1.0) # on s'assure que la chance ne dépasse pas 100%
         
@@ -369,6 +383,11 @@ class RandomManager:
         # Le coffre contiendra entre 1 et 3 items
         num_items = random.randint(2, 3) 
 
+        # Si le joueur a le charme, il trouve plus d'objets
+        if player.inventory.get_quantity("Charm Chroma") > 0:
+            # Le coffre/trou contiendra entre 2 et 5 items (à voir si c'est pas trop cheaté)
+            num_items = random.randint(2, 5)
+        
         if type_of_contenent == "Hole":
             loot = self.hole_loot_items
             weights = self.hole_loot_weights

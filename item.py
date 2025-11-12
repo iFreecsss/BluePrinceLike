@@ -84,13 +84,14 @@ class RegenerativeItem(Item):
 
 #INSTANTATION DES OBJETS
 item_None = NonConsumableItem(None,None,None)
-player_Diamond = ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 1) #10
-player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1) #15
-player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1) #70
-player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1) #5
-player_Coin = ConsumableItem("Coin", "Images/Icons/coin_icon.png", 1) #100
+player_Diamond = ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 1) 
+player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1) 
+player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1) 
+player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1) 
+player_Coin = ConsumableItem("Coin", "Images/Icons/coin_icon.png", 1) 
 
 shovel = NonConsumableItem("Shovel", "Images/Icons/shovel_icon.png", 1)
+charm_chroma = NonConsumableItem("Charm Chroma", "Images/Icons/charm_chroma_icon.png", 1)
 
 player_Apple = RegenerativeItem("Apple", "Images/Icons/apple_icon.png", 1, player_Footsteps, 2)
 player_Banana = RegenerativeItem("Banana","Images/Icons/banana_icon.png", 1, player_Footsteps, 3)
