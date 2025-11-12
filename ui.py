@@ -262,17 +262,17 @@ class UI:
     def draw_elements(self):
         """Dessine les panneaux et les images de l'interface."""
         # Cadre général et Panneaux
-        pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.main_border_rect, 4, border_radius=10)
+        pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.main_border_rect, 3, border_radius=10)
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.main_view_rect, border_radius=10)
         pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.main_view_rect, 2)
 
         # Inventaire
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.inventory_rect, border_radius=10)
-        pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.inventory_rect, 4, border_radius=10)
+        pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.inventory_rect, 3, border_radius=10)
 
         # Espace pour tirer les salles
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.draw_room_rect, border_radius=10)
-        pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.draw_room_rect, 4, border_radius=10)
+        pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.draw_room_rect, 3, border_radius=10)
 
     def draw_room_choice_screen(self):
         """

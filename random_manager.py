@@ -83,7 +83,7 @@ class RandomManager:
         # Toutes les actions possibles qu'une salle peut contenir
         self.possible_room_actions = [
             room_Apple, room_Banana, room_Dice, room_Key, 
-            room_Chest, room_Hole, room_None
+            room_Chest, room_Hole, room_None, room_Coin
         ]
     
 
@@ -94,7 +94,8 @@ class RandomManager:
             10, # Key
             5, # Chest
             5, # Hole
-            30 # Rien
+            20, # Rien
+            10 # Coin
         ]
         
         self.chest_loot_pool = [
@@ -103,11 +104,24 @@ class RandomManager:
             (room_Diamond, 10), # (action, proba)
             (room_Key, 15),
             (room_Dice, 15),
-            (room_Shovel, 40) # la pelle ne peut apparaître que dans un coffre ou casier plus tard
+            (room_Shovel, 40), # la pelle ne peut apparaître que dans un coffre ou casier plus tard
+            (room_Coin, 20)
         ]
 
         self.chest_loot_items = [item[0] for item in self.chest_loot_pool]
         self.chest_loot_weights = [item[1] for item in self.chest_loot_pool]
+
+
+        self.hole_loot_pool = [
+            (room_Apple, 10),
+            (room_Banana, 10),
+            (room_Diamond, 10), # (action, proba)
+            (room_Key, 15),
+            (room_Dice, 15),
+            (room_Coin, 20)
+        ]
+        self.hole_loot_items = [item[0] for item in self.chest_loot_pool]
+        self.hole_loot_weights = [item[1] for item in self.chest_loot_pool]
 
     def is_room_placable(self, RoomClass, current_map, position, direction_of_entry):
         """
@@ -332,8 +346,13 @@ class RandomManager:
                 # Si l'action est un coffre, on génère son inventaire
                 if new_action_copy.name == "Chest":
                     # On génère un inventaire de butin aléatoire
-                    loot_inv = self.generate_random_loot_inventory(player)
+                    loot_inv = self.generate_random_loot_inventory(player, "Chest")
                     # On assigne cet inventaire à l'attribut item du coffre
+                    new_action_copy.item = loot_inv
+                elif new_action_copy.name == "Hole":
+                    # On génère un inventaire de butin aléatoire pour le trou
+                    loot_inv = self.generate_random_loot_inventory(player, "Hole")
+                    # On assigne cet inventaire à l'attribut item du trou
                     new_action_copy.item = loot_inv
 
                 new_room_inventory.addInventory(new_action_copy)
@@ -341,7 +360,7 @@ class RandomManager:
         # Assigne ce nouvel inventaire à la salle
             room_instance.inventories = new_room_inventory
 
-    def generate_random_loot_inventory(self, player):
+    def generate_random_loot_inventory(self, player, type_of_contenent):
         """
         Crée et retourne un nouvel objet Inventory() avec ressources random (pour chest et casier)
         """
@@ -349,10 +368,17 @@ class RandomManager:
         
         # Le coffre contiendra entre 1 et 3 items
         num_items = random.randint(2, 3) 
-        
+
+        if type_of_contenent == "Hole":
+            loot = self.hole_loot_items
+            weights = self.hole_loot_weights
+        if type_of_contenent == "Chest":
+            loot = self.chest_loot_items
+            weights = self.chest_loot_weights
+
         items_to_add = random.choices(
-            self.chest_loot_items,
-            weights=self.chest_loot_weights,
+            loot,
+            weights=weights,
             k=num_items
         )
         
@@ -373,7 +399,7 @@ class RandomManager:
                     # Le joueur a déjà une pelle
                     pass
 
-            elif item_copy.name in ["Diamond", "Key", "Dice", "Apple", "Banana"]:
+            elif item_copy.name in ["Diamond", "Key", "Dice", "Apple", "Banana", "Coin"]:
                 item_copy.quantity = random.randint(1, 2)
                 loot_inventory.add_item(item_copy)
                 added_items += 1
