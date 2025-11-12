@@ -420,17 +420,17 @@ class RandomManager:
         if added_items == 0:
             
             # On crée un pool de secours sans la pelle
-            non_shovel_pool = []
-            non_shovel_weights = []
+            consumable_pool = []
+            consumable_weights = []
             
             for i, item in enumerate(self.chest_loot_items):
-                if item.name != "Shovel":
-                    non_shovel_pool.append(item)
-                    non_shovel_weights.append(self.chest_loot_weights[i])
+                if type(item) != NonConsumableItem:
+                    consumable_pool.append(item)
+                    consumable_weights.append(self.chest_loot_weights[i])
 
             # On tire un item de secours
-            if non_shovel_pool: 
-                backup_item_template = random.choices(non_shovel_pool, weights=non_shovel_weights, k=1)[0]
+            if consumable_pool: 
+                backup_item_template = random.choices(consumable_pool, weights=consumable_weights, k=1)[0]
                 item_copy = copy.deepcopy(backup_item_template.item)
                 item_copy.quantity = random.randint(1, 2) 
                 loot_inventory.add_item(item_copy)
