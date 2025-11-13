@@ -6,7 +6,7 @@ class Item(ABC):
     """
     Classe de base abstraite pour tous les objets du jeu définit interface commune
     """
-    def __init__(self, name, image_path,description="", quantity = 1):
+    def __init__(self, name, image_path, quantity = 1, description=""):
         self.name = name
         self.description = description
         self.image_path = image_path
@@ -31,8 +31,8 @@ class ConsumableItem(Item):
     """
     Un objet consommable qui s'empile (ex: pièces, pas) + hérite de Item.
     """
-    def __init__(self, name, image_path,description="", quantity=1):
-        super().__init__(name, image_path,quantity)
+    def __init__(self, name, image_path, quantity=1, description=""):
+        super().__init__(name, image_path, quantity, description)
     
     def use(self, player, amount=0):
         """
@@ -57,8 +57,8 @@ class NonConsumableItem(Item):
     """
     Un objet non consommable (unique) (ex: pelle) + hérite de Item.
     """
-    def __init__(self, name, image_path,description="",quantity=1):
-        super().__init__(name, image_path, quantity)
+    def __init__(self, name, image_path,quantity=1, description=""):
+        super().__init__(name, image_path, quantity, description)
 
     def add(self,amount):
         pass
@@ -71,8 +71,8 @@ class NonConsumableItem(Item):
         return True
 
 class RegenerativeItem(Item):
-    def __init__(self, name, image_path,description="",quantity=1, regenerate : Item = None, amount=1):
-        super().__init__(name, image_path, quantity)
+    def __init__(self, name, image_path,quantity=1, regenerate : Item = None, amount=1, description=""):
+        super().__init__(name, image_path, quantity, description)
         self.regenerate = regenerate.return_item_with_amount(amount)
         
     def add(self,amount):
@@ -85,18 +85,18 @@ class RegenerativeItem(Item):
 
 #INSTANTATION DES OBJETS
 
-player_Diamond = ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 1) 
-player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1) 
-player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1) 
-player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1) 
-player_Coin = ConsumableItem("Coin", "Images/Icons/coin_icon.png", 1) 
+player_Diamond = ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 1, "Used to purchase and place new rooms.") 
+player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1, "Opens locked doors (1 key) or double-locked doors (2 keys) and chests.") 
+player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1, "Your stamina. Moving and building consumes steps. Game Over if 0.") 
+player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1, "Reroll the available room choices if you don't like them.") 
+player_Coin = ConsumableItem("Coin", "Images/Icons/coin_icon.png", 1, "Can be used to buy in stores") 
 
-player_hammer = NonConsumableItem("Hammer", "Images/Icons/hammer_icon.png", 1)
-player_shovel = NonConsumableItem("Shovel", "Images/Icons/shovel_icon.png", 1)
-player_charm_chroma = NonConsumableItem("Charm Chroma", "Images/Icons/charm_chroma_icon.png", 1)
-player_metal_detector = NonConsumableItem("Metal Detector", "Images/Icons/metal_detector_icon.png", 1)
-player_lock_picking_kit = NonConsumableItem("Lock Picking Kit", "Images/Icons/lock_picking_kit_icon.png", 1)
+player_hammer = NonConsumableItem("Hammer", "Images/Icons/hammer_icon.png", 1, "A heavy tool. Useful to highjack chests.")
+player_shovel = NonConsumableItem("Shovel", "Images/Icons/shovel_icon.png", 1, "Required to dig up holes interactions for loot.")
+player_charm_chroma = NonConsumableItem("Charm Chroma", "Images/Icons/charm_chroma_icon.png", 1, "Increases the probability of finding items in rooms by 50%.")
+player_metal_detector = NonConsumableItem("Metal Detector", "Images/Icons/metal_detector_icon.png", 1, "Drastically increases chance to find Keys and Coins.")
+player_lock_picking_kit = NonConsumableItem("Lock Picking Kit", "Images/Icons/lock_picking_kit_icon.png", 1, "Makes locks easier. Opens simple locks for free and spare 1 key when you open a double lock !")
 
-player_Apple = RegenerativeItem("Apple", "Images/Icons/apple_icon.png", 1, player_Footsteps, 2)
-player_Banana = RegenerativeItem("Banana","Images/Icons/banana_icon.png", 1, player_Footsteps, 3)
+player_Apple = RegenerativeItem("Apple", "Images/Icons/apple_icon.png", 1, player_Footsteps, 2, "A healthy snack. Restores +2 Footsteps immediately.")
+player_Banana = RegenerativeItem("Banana","Images/Icons/banana_icon.png", 1, player_Footsteps, 3, "Rich in energy. Restores +3 Footsteps immediately.")
 
