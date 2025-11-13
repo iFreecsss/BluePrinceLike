@@ -1,6 +1,9 @@
 from item import *
 import numpy as np
 from inventory import *
+import random
+import copy
+
 
 class RoomObject:
     """
@@ -411,6 +414,39 @@ class Locker_Room(RoomObject):
     def __init__(self):
         super().__init__("Locker_Room", "Images/Rooms/Locker_Room.png", base_exits=[0,2])
 
+    def on_draft(self, game_logic):
+        """
+        Disperse des Clés (Keys) aléatoirement dans le manoir sous forme d'interactions.
+        Si Conference Room est présente, tout va là-bas.
+        """
+        keys_amount = random.randint(2, 4)
+        
+        active_rooms = []
+        conference_room = None
+        current_map = game_logic.map.get_current_mapping()
+        
+        for room in np.nditer(current_map, flags=['refs_ok']):
+            room_obj = room.item()
+            if room_obj is not None:
+                active_rooms.append(room_obj)
+                if room_obj.name == "Conference_Room":
+                    conference_room = room_obj
+        
+        active_rooms.append(self)   # Locker Room peut recevoir des clés
+
+        if conference_room:
+            # tout dans la Conference Room
+            for _ in range(keys_amount):
+                # on ajoute une copie de l'interaction "Key" à l'inventaire de la salle
+                conference_room.inventories.addInventory(copy.deepcopy(room_Key))
+            game_logic.warning_message = f"Locker Room: {keys_amount} Keys sent to Conference Room!"
+        else:
+            # dispersion aléatoire
+            targets = random.choices(active_rooms, k=keys_amount)
+            for target_room in targets:
+                target_room.inventories.addInventory(copy.deepcopy(room_Key))
+            game_logic.warning_message = f"Locker Room: {keys_amount} Keys spread throughout the house!"
+
 class Maids_Chamber(RoomObject):
     rarity = 'uncommon'
     cost = 0
@@ -470,6 +506,35 @@ class Office(RoomObject):
     room_type = 'Room'
     def __init__(self):
         super().__init__("Office", "Images/Rooms/Office.png", base_exits=[1,2])
+    
+    def on_draft(self, game_logic):
+        """
+        Disperse de l'Or (Coins) aléatoirement.
+        """
+        coins_amount = random.randint(3, 5)
+        
+        active_rooms = []
+        conference_room = None
+        current_map = game_logic.map.get_current_mapping()
+        
+        for room in np.nditer(current_map, flags=['refs_ok']):
+            room_obj = room.item()
+            if room_obj is not None:
+                active_rooms.append(room_obj)
+                if room_obj.name == "Conference_Room":
+                    conference_room = room_obj
+        
+        active_rooms.append(self)
+
+        if conference_room:
+            for _ in range(coins_amount):
+                conference_room.inventories.addInventory(copy.deepcopy(room_Coin))
+            game_logic.warning_message = f"Office: {coins_amount} Coins collected in Conference Room!"
+        else:
+            targets = random.choices(active_rooms, k=coins_amount)
+            for target_room in targets:
+                target_room.inventories.addInventory(copy.deepcopy(room_Coin))
+            game_logic.warning_message = f"Office: {coins_amount} Coins spread through the house!"
 
 class Parlor(RoomObject):
     rarity = 'common'
@@ -491,6 +556,40 @@ class Patio(RoomObject):
     room_type = 'Green Room'
     def __init__(self):
         super().__init__("Patio", "Images/Green Rooms/Patio.png", base_exits=[1,2])
+    
+    def on_draft(self, game_logic):
+        """
+        Donne 1 Gemme UNIQUEMENT aux 'Green Rooms' (déjà placées + le Patio).
+        Si Conference Room est là, toutes les gemmes vont là-bas.
+        """
+        green_rooms = []
+        conference_room = None
+        current_map = game_logic.map.get_current_mapping()
+        
+        # on cherche la Conference Room et les Green Rooms existantes
+        for room in np.nditer(current_map, flags=['refs_ok']):
+            room_obj = room.item()
+            if room_obj is not None:
+                if room_obj.name == "Conference_Room":
+                    conference_room = room_obj
+                # vérification du type pour l'effet Patio
+                if room_obj.room_type == 'Green Room':
+                    green_rooms.append(room_obj)
+        
+        green_rooms.append(self)    # Patio est aussi dedans
+        
+        total_gems = len(green_rooms) # 1 gemme par Green Room
+
+        if conference_room:
+            # toutes les gemmes (1 par Green Room) vont dans la Conference Room
+            for _ in range(total_gems):
+                conference_room.inventories.addInventory(copy.deepcopy(room_Diamond))
+            game_logic.warning_message = f"Patio: {total_gems} Gems gathered in Conference Room!"
+        else:
+            # une gemme apparaît dans chaque Green Room
+            for target_room in green_rooms:
+                target_room.inventories.addInventory(copy.deepcopy(room_Diamond))
+            game_logic.warning_message = "Patio: A Gem appears in every Green Room!"
 
 class Pump_Room(RoomObject):
     rarity = 'uncommon'
@@ -519,6 +618,38 @@ class Secret_Garden(RoomObject):
     room_type = 'Green Room'
     def __init__(self):
         super().__init__("Secret_Garden", "Images/Green Rooms/Secret_Garden.png", base_exits=[1,2,3])
+    
+    def on_draft(self, game_logic):
+        """
+        Disperse des Fruits (Apple/Banana).
+        """
+        fruit_amount = random.randint(3, 5)
+        possible_fruits_interactions = [room_Apple, room_Banana]
+        
+        active_rooms = []
+        conference_room = None
+        current_map = game_logic.map.get_current_mapping()
+        
+        for room in np.nditer(current_map, flags=['refs_ok']):
+            room_obj = room.item()
+            if room_obj is not None:
+                active_rooms.append(room_obj)
+                if room_obj.name == "Conference_Room":
+                    conference_room = room_obj
+                    
+        active_rooms.append(self)
+
+        if conference_room:
+            for _ in range(fruit_amount):
+                interaction = random.choice(possible_fruits_interactions)
+                conference_room.inventories.addInventory(copy.deepcopy(interaction))
+            game_logic.warning_message = f"Secret Garden: {fruit_amount} Fruits delivered to Conference Room!"
+        else:
+            targets = random.choices(active_rooms, k=fruit_amount)
+            for target_room in targets:
+                interaction = random.choice(possible_fruits_interactions)
+                target_room.inventories.addInventory(copy.deepcopy(interaction))
+            game_logic.warning_message = f"Secret Garden: {fruit_amount} Fruits grew around the house!"
 
 class Secret_Passage(RoomObject):
     rarity = 'uncommon'
