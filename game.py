@@ -261,7 +261,21 @@ class Game:
                     self.possible_actions = inventory.get_action_number()
                     self.handle_action_index(i)
                         
-                        
+            if "ROTATE_ROOM" in inputs:
+                # on récupère la salle actuelle
+                current_room = self.map.get_current_mapping()[self.player.position]
+                
+                # on vérifie si c'est bien une Rotunda
+                if isinstance(current_room, Rotunda):
+                    # on effectue la rotation
+                    current_room.rotate_walls()
+                    self.warning_message = "The gears grind... The room rotates clockwise!"
+                    # on joue un son mécanique si vous en avez un, sinon on peut réutiliser footsteps ou dice
+                    self.sound_to_play = 'rotate'
+                else:
+                    # Feedback si le joueur appuie sur T dans une autre salle
+                    self.warning_message = "Nothing happens."
+            
         elif self.game_state == "DRAWING_ROOM":
             # marche de la même façon que pour l'exploration
             for i in inputs:
