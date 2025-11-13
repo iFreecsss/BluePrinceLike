@@ -605,6 +605,13 @@ class Rotunda(RoomObject):
     def __init__(self):
         super().__init__("Rotunda", "Images/Rooms/Rotunda.png", base_exits=[1,2])
 
+    def rotate_walls(self):
+        """
+        Tourne la salle de 90 degrés dans le sens horaire.
+        Met à jour l'orientation qui est utilisée par has_exits() et par l'affichage.
+        """
+        self.orientation = (self.orientation + 1) % 4
+
 class Security(RoomObject):
     rarity = 'rare'
     cost = 1
