@@ -89,7 +89,6 @@ class RandomManager:
             (room_Key, 10),
             (room_Chest, 85),
             (room_Hole, 5),
-            (room_None, 20),
             (room_Coin, 10)
         ]
 
@@ -426,7 +425,7 @@ class RandomManager:
             # On copie l'Item contenu dans le RoomObject
             item_copy = copy.deepcopy(item.item) 
             
-            if type(item_copy) == NonConsumableItem:
+            if isinstance(item_copy, NonConsumableItem):
                 # On vérifie l'inventaire du joueur
                 if player.inventory.get_quantity(item_copy.name) == 0: 
                     item_copy.quantity = 1
@@ -447,7 +446,8 @@ class RandomManager:
 
             
             for i, item in enumerate(loot):
-                if type(item) != NonConsumableItem:
+                if not isinstance(item, NonConsumableItem):
+                    print('caca')
                     consumable_pool.append(item)
                     consumable_weights.append(weights[i])
 

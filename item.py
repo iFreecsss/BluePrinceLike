@@ -6,8 +6,9 @@ class Item(ABC):
     """
     Classe de base abstraite pour tous les objets du jeu définit interface commune
     """
-    def __init__(self, name, image_path, quantity = 1):
+    def __init__(self, name, image_path,description="", quantity = 1):
         self.name = name
+        self.description = description
         self.image_path = image_path
         self.quantity = quantity
         
@@ -30,7 +31,7 @@ class ConsumableItem(Item):
     """
     Un objet consommable qui s'empile (ex: pièces, pas) + hérite de Item.
     """
-    def __init__(self, name, image_path, quantity=1):
+    def __init__(self, name, image_path,description="", quantity=1):
         super().__init__(name, image_path,quantity)
     
     def use(self, player, amount=0):
@@ -56,7 +57,7 @@ class NonConsumableItem(Item):
     """
     Un objet non consommable (unique) (ex: pelle) + hérite de Item.
     """
-    def __init__(self, name, image_path,quantity=1):
+    def __init__(self, name, image_path,description="",quantity=1):
         super().__init__(name, image_path, quantity)
 
     def add(self,amount):
@@ -70,7 +71,7 @@ class NonConsumableItem(Item):
         return True
 
 class RegenerativeItem(Item):
-    def __init__(self, name, image_path,quantity=1, regenerate : Item = None, amount=1):
+    def __init__(self, name, image_path,description="",quantity=1, regenerate : Item = None, amount=1):
         super().__init__(name, image_path, quantity)
         self.regenerate = regenerate.return_item_with_amount(amount)
         
@@ -83,7 +84,7 @@ class RegenerativeItem(Item):
         return True
 
 #INSTANTATION DES OBJETS
-item_None = NonConsumableItem(None,None,None)
+
 player_Diamond = ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 1) 
 player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1) 
 player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1) 
