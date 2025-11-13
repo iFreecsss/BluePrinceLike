@@ -29,7 +29,7 @@ class UI:
 
         self.message_text = None
         self.message_timer = 0
-        self.MESSAGE_DURATION = 1250
+        self.MESSAGE_DURATION = 2000
 
         #Index pour les actions
         self.action_index = 0
@@ -114,6 +114,7 @@ class UI:
         self.dice_icon = pygame.transform.scale(self.dice_icon, (40, 40))
 
         self.item_icon_cache = {}
+        self.room_image_cache = {}
 
     def create_layout(self):
         #Définition des dimensions des différentes parties de l'UI
@@ -200,15 +201,27 @@ class UI:
 
             if hasattr(room, 'image'):
                 
-                img = pygame.image.load(map_array[x,y].image).convert_alpha()
-                img = pygame.transform.scale(img, (cell_rect.width, cell_rect.height)) 
-                
-                rotation_angle = room.orientation * 90
-                
-                img_rotated = pygame.transform.rotate(img, rotation_angle)
-                img_rect = img_rotated.get_rect(center = cell_rect.center)
+                # contre les lags quand beaucoup d'images sur la map
+                # en gros on stocke l'image dans un cache et quand y'a besoin de la ressortir
+                # on utilise ce cache si elle a déjà été charger/scale/transform avant.
+                cache_key = (room.image, room.orientation)
 
-                self.display_surface.blit(img_rotated, img_rect)
+                if cache_key not in self.room_image_cache:
+                    img = pygame.image.load(room.image).convert_alpha()
+                    img = pygame.transform.scale(img, (cell_rect.width, cell_rect.height)) 
+                    
+                    rotation_angle = room.orientation * 90
+                    
+                    img_rotated = pygame.transform.rotate(img, rotation_angle)
+
+                    # On stocke l'image finale (chargée, scalée et tournée) dans le cache
+                    self.room_image_cache[cache_key] = img_rotated
+
+                # On récupère l'image finale depuis le cache
+                final_image = self.room_image_cache[cache_key]
+                img_rect = final_image.get_rect(center = cell_rect.center)
+
+                self.display_surface.blit(final_image, img_rect)
             else:
                     raise ValueError(f"Image non trouvée pour display_map image {map_array[x,y].name}")
 
@@ -619,6 +632,7 @@ class UI:
                 # Ligne suivante
                 current_x = start_x
                 current_y += icon_size + padding
+            
 
     def draw_possible_actions(self):
         panel = self.draw_room_rect
