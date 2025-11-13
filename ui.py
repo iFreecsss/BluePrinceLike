@@ -592,13 +592,25 @@ class UI:
         icon_size = 50
         padding = 40
         
-        # on place les icônes en partant d'une position de départ du rectangle de l'inventaire en ajoutant le padding
-        start_x = panel_rect.left + padding
-        start_y = panel_rect.top + 2*padding
-        
-        current_x = start_x
-        current_y = start_y
+        # calcul du nombre max d'item en une ligne 
+        usable_width = self.INVENTORY_WIDTH - 2*padding
+        items_per_row = (usable_width + padding) // (icon_size + padding)
+        line_spacing = 0
 
+        # si le nombre d'items est supérieur aux max calculer on change de 
+        if len(items) > items_per_row:
+            # On remonte la première ligne vers le haut
+            # pour laisser de la place à la ligne du dessous
+            start_y = panel_rect.top + 55
+            line_spacing = 15 # Espace entre les deux lignes
+        else:
+            # CAS LIGNE UNIQUE : On centre la ligne verticalement (ex: +85px du top)
+            start_y = panel_rect.top + 85
+
+        # on place les icônes en partant d'une position de départ du rectangle de l'inventaire en ajoutant le padding
+        current_x = panel_rect.left + padding
+        current_y = start_y
+        
         for item in items:
             # Charger l'icône si elle n'est pas déjà en cache
             # (on évite de recharger l'image à chaque frame pour les performances)
@@ -636,8 +648,8 @@ class UI:
             current_x += icon_size + padding
             if current_x + icon_size > panel_rect.right - padding:
                 # Ligne suivante
-                current_x = start_x
-                current_y += icon_size + padding
+                current_x = panel_rect.left + padding
+                current_y += icon_size + line_spacing
             
 
     def draw_possible_actions(self):
