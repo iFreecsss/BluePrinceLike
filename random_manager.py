@@ -87,7 +87,7 @@ class RandomManager:
             (room_Banana, 15),
             (room_Dice, 5),
             (room_Key, 10),
-            (room_Chest, 5),
+            (room_Chest, 85),
             (room_Hole, 5),
             (room_None, 20),
             (room_Coin, 10)
@@ -400,10 +400,10 @@ class RandomManager:
         
         added_items = 0
 
-        for item_template in items_to_add:
+        for item in items_to_add:
             
             # On copie l'Item contenu dans le RoomObject
-            item_copy = copy.deepcopy(item_template.item) 
+            item_copy = copy.deepcopy(item.item) 
             
             if type(item_copy) == NonConsumableItem:
                 # On vérifie l'inventaire du joueur
@@ -423,16 +423,17 @@ class RandomManager:
             # On crée un pool de secours sans la pelle
             consumable_pool = []
             consumable_weights = []
+
             
-            for i, item in enumerate(self.chest_loot_items):
+            for i, item in enumerate(loot):
                 if type(item) != NonConsumableItem:
                     consumable_pool.append(item)
-                    consumable_weights.append(self.chest_loot_weights[i])
+                    consumable_weights.append(weights[i])
 
             # On tire un item de secours
             if consumable_pool: 
-                backup_item_template = random.choices(consumable_pool, weights=consumable_weights, k=1)[0]
-                item_copy = copy.deepcopy(backup_item_template.item)
+                backup_item = random.choices(consumable_pool, weights=consumable_weights, k=1)[0]
+                item_copy = copy.deepcopy(backup_item.item)
                 item_copy.quantity = random.randint(1, 2) 
                 loot_inventory.add_item(item_copy)
             
