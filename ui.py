@@ -579,6 +579,10 @@ class UI:
         """Dessine le contenu de l'inventaire dans le panneau self.inventory_rect."""
         
         panel_rect = self.inventory_rect
+
+        # pour le survol au dessus d'un icone
+        mouse_pos = pygame.mouse.get_pos()
+        overflied_item = None
         
         # Titre du panneau
         title_text = self.inventory_font_large.render("Inventory", True, self.COLOR_TEXT)
@@ -592,11 +596,23 @@ class UI:
         icon_size = 50
         padding = 40
         
+        # calcul du nombre max d'item en une ligne 
+        usable_width = self.INVENTORY_WIDTH - 2*padding
+        items_per_row = (usable_width + padding) // (icon_size + padding)
+        line_spacing = 0
+
+        # si le nombre d'items est supérieur aux max calculer on change de 
+        if len(items) > items_per_row:
+            # On remonte la première ligne vers le haut
+            # pour laisser de la place à la ligne du dessous
+            start_y = panel_rect.top + 55
+            line_spacing = 15 # Espace entre les deux lignes
+        else:
+            # CAS LIGNE UNIQUE : On centre la ligne verticalement (ex: +85px du top)
+            start_y = panel_rect.top + 85
+
         # on place les icônes en partant d'une position de départ du rectangle de l'inventaire en ajoutant le padding
-        start_x = panel_rect.left + padding
-        start_y = panel_rect.top + 2*padding
-        
-        current_x = start_x
+        current_x = panel_rect.left + padding
         current_y = start_y
 
         for item in items:
@@ -613,6 +629,10 @@ class UI:
             
             # Dessine l'icône
             self.display_surface.blit(icon, icon_rect)
+
+            # détection du survol d'un item 
+            if icon_rect.collidepoint(mouse_pos):
+                overflied_item = item
             
             # Si c'est un consommable => affiche la quantité
             if isinstance(item, ConsumableItem):
@@ -636,9 +656,52 @@ class UI:
             current_x += icon_size + padding
             if current_x + icon_size > panel_rect.right - padding:
                 # Ligne suivante
-                current_x = start_x
-                current_y += icon_size + padding
+                current_x = panel_rect.left + padding
+                current_y += icon_size + line_spacing
+        if overflied_item:
+            self.draw_item_description(overflied_item, mouse_pos)
+
+    def draw_item_description(self, item, mouse_pos):
+        """Affiche une petite fenêtre avec le nom et la description de l'objet"""
+        
+        padding = 10
+        bg_color = (30, 30, 30)
+        border_color = (200, 200, 200)
+        text_color = (255, 255, 255)
+        desc_color = (200, 200, 200)
+        
+        # titre
+        title_surf = self.inventory_item_font.render(item.name, True, text_color)
+        
+        # Description
+        desc_surf = self.inventory_font_small.render(item.description, True, desc_color)
+        
+        # Calcul des dimensions de la boîte
+        width = max(title_surf.get_width(), desc_surf.get_width()) + (2 * padding)
+        height = title_surf.get_height() + desc_surf.get_height() + (2 * padding) + 5
+        
+        x, y = mouse_pos
+        x += 15 # Décalage pour ne pas être sous le curseur
+        y += 15
+        
+        # Si la boîte sort de l'écran à droite, on l'affiche à gauche de la souris
+        if x + width > self.SCREEN_WIDTH:
+            x = mouse_pos[0] - width - 15
             
+        # Si la boîte sort en bas, on la remonte
+        if y + height > self.SCREEN_HEIGHT:
+            y = mouse_pos[1] - height - 15
+            
+        tooltip_rect = pygame.Rect(x, y, width, height)
+        
+        # Fond
+        pygame.draw.rect(self.display_surface, bg_color, tooltip_rect, border_radius=5)
+        # Bordure
+        pygame.draw.rect(self.display_surface, border_color, tooltip_rect, 2, border_radius=5)
+        
+        # Textes
+        self.display_surface.blit(title_surf, (x + padding, y + padding))
+        self.display_surface.blit(desc_surf, (x + padding, y + padding + title_surf.get_height() + 5))    
 
     def draw_possible_actions(self):
         panel = self.draw_room_rect

@@ -89,7 +89,6 @@ class RandomManager:
             (room_Key, 10),
             (room_Chest, 85),
             (room_Hole, 5),
-            (room_None, 20),
             (room_Coin, 10)
         ]
 
@@ -105,12 +104,13 @@ class RandomManager:
             (room_Shovel, 40), # la pelle ne peut apparaître que dans un coffre ou casier plus tard
             (room_Coin, 20),
             (room_charm_chroma, 5),
-            (room_metal_detector, 5)
+            (room_metal_detector, 5),
+            (room_hammer, 5),
+            (room_lock_picking_kit, 5)
         ]
 
         self.chest_loot_items = [item[0] for item in self.chest_loot_pool]
         self.chest_loot_weights = [item[1] for item in self.chest_loot_pool]
-
 
         self.hole_loot_pool = [
             (room_Apple, 10),
@@ -120,8 +120,11 @@ class RandomManager:
             (room_Dice, 15),
             (room_Coin, 20),
             (room_charm_chroma, 10),
-            (room_metal_detector, 10)
+            (room_metal_detector, 5),
+            (room_hammer, 5),
+            (room_lock_picking_kit, 5)
         ]
+
         self.hole_loot_items = [item[0] for item in self.hole_loot_pool]
         self.hole_loot_weights = [item[1] for item in self.hole_loot_pool]
 
@@ -335,14 +338,27 @@ class RandomManager:
             
             num_items_to_spawn = random.choices(actions_choices, weights=actions_weights, k=1)[0]
 
-        
+            # On récupère les poids de base
+            current_action_weights = self.action_weights.copy()
+
+            # On vérifie si le joueur a le détecteur de métal
+            if player.inventory.get_quantity("Metal Detector") > 0:
+
+                metal_detector_multiplier = 2.0
+                # On cherche l'index de "Key" pour modifier son poids
+                key_index = self.room_actions.index(room_Key)
+                current_action_weights[key_index] *= metal_detector_multiplier
+                # On cherche l'index de "Coin" pour modifier son poids
+                coin_index = self.room_actions.index(room_Coin)
+                current_action_weights[coin_index] *= metal_detector_multiplier
+
             # Crée un nouvel inventaire de salle vide
             new_room_inventory = Room_Inventory()
 
             # Tire N actions aléatoires depuis notre pool d'objets
             chosen_actions = random.choices(
                 self.room_actions,
-                weights=self.action_weights, 
+                weights=current_action_weights, 
                 k=num_items_to_spawn
             )
 
@@ -380,10 +396,14 @@ class RandomManager:
         # Le coffre contiendra entre 1 et 3 items
         num_items = random.randint(2, 3) 
 
+
+        # J'AI DESACTIVE CAR DANS L'ENONCE DU PROF C'EST ECRIT "DANS LE MANOIR" 
+        # je pense que implicitement c'est "pas dans les coffres ou autres contenants"
+        # de la même façon, je ne met pas l'effet du détecteur de métal dans les contenants
         # Si le joueur a le charme, il trouve plus d'objets
-        if player.inventory.get_quantity("Charm Chroma") > 0:
+        # if player.inventory.get_quantity("Charm Chroma") > 0:
             # Le coffre/trou contiendra entre 2 et 5 items (à voir si c'est pas trop cheaté)
-            num_items = random.randint(2, 5)
+            # num_items = random.randint(2, 5)
         
         if type_of_contenent == "Hole":
             loot = self.hole_loot_items
@@ -405,7 +425,7 @@ class RandomManager:
             # On copie l'Item contenu dans le RoomObject
             item_copy = copy.deepcopy(item.item) 
             
-            if type(item_copy) == NonConsumableItem:
+            if isinstance(item_copy, NonConsumableItem):
                 # On vérifie l'inventaire du joueur
                 if player.inventory.get_quantity(item_copy.name) == 0: 
                     item_copy.quantity = 1
@@ -426,7 +446,7 @@ class RandomManager:
 
             
             for i, item in enumerate(loot):
-                if type(item) != NonConsumableItem:
+                if not isinstance(item, NonConsumableItem):
                     consumable_pool.append(item)
                     consumable_weights.append(weights[i])
 
