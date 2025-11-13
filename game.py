@@ -76,6 +76,7 @@ class Game:
         """
         direction = self.player.direction
         current_room_coords = self.player.position
+        
 
         # On regarde dans quelle salle on est actuellement
         current_room = self.map.get_current_mapping()[current_room_coords] 
@@ -118,31 +119,26 @@ class Game:
         # On vérifie le niveau de blocage de la porte dans cette direction
         lock_level = current_room.get_lock_level(direction)
         
-        if lock_level == 1:
+        if lock_level !=0:
+            
+            if self.player.inventory.get_quantity("Lock Picking Kit")>0:
+                lock_level -= 1
+        
             # Porte fermée normale (Niveau 1)
             # Si assez de clés
-            if self.player.use(player_Key.return_item_with_amount(1)):
-                self.warning_message = "You used 1 key to unlock the door."
+            if self.player.use(player_Key.return_item_with_amount(lock_level)):
+                self.warning_message = f"You used {lock_level} key(s) to unlock the door."
                 current_room.unlock_exit(direction)
                 if target_room is not None:
                     opposite_direction = (direction + 2) % 4
                     target_room.unlock_exit(opposite_direction)
             else:
-                self.warning_message = "This door is locked. You need 1 key."
+                if lock_level==1:
+                    self.warning_message = f"This door is locked. You need {lock_level} key."
+                elif lock_level == 2:
+                    self.warning_message = "This door is double-locked. You need 2 keys."
                 return # Bloqué
-        
-        elif lock_level == 2:
-            # Porte fermée double tours (Niveau 2)
-            if self.player.use(player_Key.return_item_with_amount(2)):
-                self.warning_message = "You used 2 keys to unlock the door."
-                current_room.unlock_exit(direction) # On déverrouille
-                if target_room is not None:
-                    opposite_direction = (direction + 2) % 4
-                    target_room.unlock_exit(opposite_direction)
-            else:
-                self.warning_message = "This door is double-locked. You need 2 keys."
-                return # Bloqué
-        
+    
         # Si on arrive ici, c'est que la porte était de niveau 0 ou vient d'être déverrouillée
         
         if target_room is None:
