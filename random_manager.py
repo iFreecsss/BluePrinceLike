@@ -447,7 +447,6 @@ class RandomManager:
             
             for i, item in enumerate(loot):
                 if not isinstance(item, NonConsumableItem):
-                    print('caca')
                     consumable_pool.append(item)
                     consumable_weights.append(weights[i])
 
