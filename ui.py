@@ -91,6 +91,9 @@ class UI:
 
         self.dice_sound = pygame.mixer.Sound('Sounds/Effects/dice.wav')
         self.dice_sound.set_volume(0.4)
+        
+        self.rotate_sound = pygame.mixer.Sound('Sounds/Effects/rotate.wav')
+        self.rotate_sound.set_volume(0.4)
 
     def init_images(self):
         # icone restart
@@ -365,6 +368,8 @@ class UI:
             self.footsteps_sound.play()
         elif sound_request == 'reroll':
             self.dice_sound.play()
+        elif sound_request == 'rotate':
+            self.rotate_sound.play()
         
         music_vol = self.data.get('music_volume', 0.4)
         effects_vol = self.data.get('effects_volume', 0.7)
@@ -378,6 +383,7 @@ class UI:
         
         if self.new_room_sound: self.new_room_sound.set_volume(final_effects_vol)
         if self.footsteps_sound: self.footsteps_sound.set_volume(final_effects_vol)
+        if self.rotate_sound: self.rotate_sound.set_volume(final_effects_vol)
 
         # gestion des messages d'avertissement
         new_message = self.data.get('warning_message')
@@ -708,6 +714,8 @@ class UI:
                         inputs.append("ENTER")
                     elif event.key == pygame.K_r:
                         inputs.append("REROLL")
+                    elif event.key == pygame.K_t:
+                        inputs.append("ROTATE_ROOM")
             
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 
