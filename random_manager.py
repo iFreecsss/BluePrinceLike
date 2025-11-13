@@ -87,7 +87,7 @@ class RandomManager:
             (room_Banana, 15),
             (room_Dice, 5),
             (room_Key, 10),
-            (room_Chest, 85),
+            (room_Chest, 5),
             (room_Hole, 5),
             (room_None, 20),
             (room_Coin, 10)
