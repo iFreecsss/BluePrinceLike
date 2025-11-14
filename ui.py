@@ -740,6 +740,61 @@ class UI:
             text_rect = action_text.get_rect(center=rect.center)
             self.display_surface.blit(action_text, text_rect)
 
+    def draw_action_confirmation(self):
+        """Affiche une boîte "Oui/Non" par-dessus l'écran d'action."""
+        
+        pending_data = self.data.get('pending_confirmation')
+        if not pending_data:
+            return
+        
+        message = pending_data.get("message", "Confirmer l'action ?")
+        # On réutilise current_choice_index (0=Oui, 1=Non)
+        current_index = self.data.get('current_choice_index', 0) 
+
+        # Dimensions de la box de confirmation
+        box_width = 600
+        box_height = 200
+        box_rect = pygame.Rect(0, 0, box_width, box_height)
+        box_rect.center = self.draw_room_rect.center # Centré sur le panneau d'action mais on peut le centrer ailleurs si besoin
+
+        # Fond semi-transparent
+        bg_surface = pygame.Surface(box_rect.size, pygame.SRCALPHA)
+        bg_surface.fill((20, 40, 70, 240))
+        self.display_surface.blit(bg_surface, box_rect.topleft)
+        pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, box_rect, 3, border_radius=10)
+
+        # Afficher le message de confirmation
+        msg_surface = self.font.render(message, True, self.COLOR_TEXT)
+        msg_rect = msg_surface.get_rect(center=(box_rect.centerx, box_rect.top + 60))
+        self.display_surface.blit(msg_surface, msg_rect)
+
+        # Options 
+        yes_text = "Oui"
+        no_text = "Non"
+
+        yes_size = self.font.size(yes_text)
+        no_size = self.font.size(no_text)
+
+        # Positionner les options
+        yes_pos_x = box_rect.centerx - (yes_size[0] / 2) - 120
+        no_pos_x = box_rect.centerx - (no_size[0] / 2) + 120
+        options_y = box_rect.top + 140
+        
+        yes_rect_bg = pygame.Rect(yes_pos_x - 20, options_y - 10, yes_size[0] + 40, yes_size[1] + 20)
+        no_rect_bg = pygame.Rect(no_pos_x - 20, options_y - 10, no_size[0] + 40, no_size[1] + 20)
+
+        # Mettre en évidence l'option sélectionnée
+        if current_index == 0: # Oui
+            pygame.draw.rect(self.display_surface, self.COLOR_PANEL_HIGHLIGHT, yes_rect_bg, 4, border_radius=5)
+        else: # Non
+            pygame.draw.rect(self.display_surface, self.COLOR_PANEL_HIGHLIGHT, no_rect_bg, 4, border_radius=5)
+
+        # Afficher le texte des options
+        yes_surf = self.font.render(yes_text, True, self.COLOR_TEXT)
+        no_surf = self.font.render(no_text, True, self.COLOR_TEXT)
+        self.display_surface.blit(yes_surf, yes_surf.get_rect(center=yes_rect_bg.center))
+        self.display_surface.blit(no_surf, no_surf.get_rect(center=no_rect_bg.center))
+
     def run(self):
         """Lance la boucle de jeu principale qui gère les événements et le dessin."""
         inputs = []
@@ -832,6 +887,12 @@ class UI:
             self.draw_room_choice_screen() 
         elif game_state == "EXPLORING":
             self.draw_possible_actions()
+
+        elif game_state == "ACTION_CONFIRMATION":
+            # On dessine les actions en fond (pour le contexte)
+            self.draw_possible_actions()
+            # Et on dessine la boîte de confirmation par-dessus
+            self.draw_action_confirmation()
         
         if game_state == "SETTINGS":
             settings_inputs = self.draw_settings_menu(mouse_pos, mouse_pressed)
