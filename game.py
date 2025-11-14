@@ -43,6 +43,8 @@ class Game:
 
         # pour la gestion des confirmations d'actions (ex: ouvrir un coffre)
         self.pending_confirmation = None
+        # rajout de la gestion des confirmations d'ouverture de porte
+        self.pending_door_confirmation = None
 
         # pour la gestion des items au sol
         self.current_floor_item_index = 0
@@ -127,21 +129,35 @@ class Game:
             if self.player.inventory.get_quantity("Lock Picking Kit")>0:
                 lock_level -= 1
         
-            # Porte fermée normale (Niveau 1)
-            # Si assez de clés
-            if self.player.use(player_Key.return_item_with_amount(lock_level)):
-                self.warning_message = f"You used {lock_level} key(s) to unlock the door."
+            # si le kit suffit à ouvrir la porte
+            if lock_level == 0:
+                self.warning_message = "You picked the lock with your Lock Picking Kit!"
                 current_room.unlock_exit(direction)
                 if target_room is not None:
                     opposite_direction = (direction + 2) % 4
                     target_room.unlock_exit(opposite_direction)
             else:
-                if lock_level==1:
-                    self.warning_message = f"This door is locked. You need {lock_level} key."
-                elif lock_level == 2:
-                    self.warning_message = "This door is double-locked. You need 2 keys."
-                return # Bloqué
-    
+                # on vérifie si le joueur a assez de clés sans les utiliser tout de suite
+                keys_needed = player_Key.return_item_with_amount(lock_level)
+                if self.player.use(keys_needed, test=True):
+                    # Demande de confirmation
+                    self.game_state = "DOOR_CONFIRMATION"
+                    # On stocke les infos pour quand le joueur dira "Oui"
+                    self.pending_door_confirmation = {
+                        "direction": direction,
+                        "lock_level": lock_level,
+                        "target_room": target_room,
+                        "final_position": final_position
+                    }
+                    return
+                else:
+                    # le joueur n'a pas de clé
+                    if lock_level == 1:
+                        self.warning_message = f"This door is locked. You need {lock_level} key."
+                    elif lock_level == 2:
+                        self.warning_message = f"This door is double-locked. You need {lock_level} keys."
+                    return # Bloqué
+        
         # Si on arrive ici, c'est que la porte était de niveau 0 ou vient d'être déverrouillée
         
         if target_room is None:
@@ -193,7 +209,6 @@ class Game:
         if given_input == "ENTER":
             if self.action_index > self.possible_actions - 1:
                 self.action_index = self.possible_actions - 1
-
 
     def handle_inputs(self, inputs):
         self.sound_to_play = None
@@ -290,13 +305,17 @@ class Game:
         elif self.game_state == "DRAWING_ROOM":
             # marche de la même façon que pour l'exploration
             for i in inputs:
-                if i in ["LEFT_ROOM", "RIGHT_ROOM", "ENTER"]:
+                if i in ["LEFT_ROOM", "RIGHT_ROOM", "ENTER", "SPACE"]:
                     self.handle_room_selection(i)
                     break
                 elif i == "REROLL":
                     self.handle_reroll()
                     break
-
+        elif self.game_state == "DOOR_CONFIRMATION":
+            for i in inputs:
+                if i in ["LEFT_ROOM", "RIGHT_ROOM", "ENTER", "SPACE"]:
+                    self.handle_door_confirmation(i)
+                    break # On ne traite qu'un input de confirmation à la fois
 
         elif self.game_state == "ACTION_CONFIRMATION":
             for i in inputs:
@@ -368,17 +387,17 @@ class Game:
         if input == "LEFT_ROOM":
             self.current_choice_index = 0 # oui
         elif input == "RIGHT_ROOM":
-            self.current_choice_index = 1 # "Non"
-        elif input in ["SPACE", "ENTER"]:
+            self.current_choice_index = 1 # Non
+        elif input == "ENTER":
             # Le joueur a confirmé son choix
             
-            if self.current_choice_index == 0: # "OUI"
+            if self.current_choice_index == 0: # oui
                 action_index = self.pending_confirmation["index"]
                 current_room = self.map.get_current_mapping()[self.player.position]
-                # On appelle à nouveau handle_action, mais en FORÇANT l'exécution
+                # On appelle à nouveau handle_action mais en forçant l'exécution
                 self.warning_message = current_room.inventories.handle_action(self.player, action_index, force=True)
             else: # "NON"
-                self.warning_message = "Action annulée."
+                self.warning_message = "Chest opening aborted"
 
             # On nettoie et on retourne à l'exploration
             self.game_state = "EXPLORING"
@@ -387,7 +406,70 @@ class Game:
             self.possible_actions = current_room.inventories.get_action_number()
             self.action_index = 0
 
+    def handle_door_confirmation(self, input):
+        """Gère les confirmations d'ouverture de porte"""
+        if input == "LEFT_ROOM":
+            self.current_choice_index = 0 # oui
+        elif input == "RIGHT_ROOM":
+            self.current_choice_index = 1 # Non
+        elif input in ["ENTER", "SPACE"]:
+            # Le joueur a confirmé son choix
+            pending_data = self.pending_door_confirmation
+            
+            if self.current_choice_index == 0: # oui
+                # Récupérer les données stockées 
+                direction = pending_data["direction"]
+                lock_level = pending_data["lock_level"]
+                target_room = pending_data["target_room"]
+                final_position = pending_data["final_position"]
+                current_room = self.map.get_current_mapping()[self.player.position]
 
+                #Essayer d'utiliser les clés
+                key_to_use = player_Key.return_item_with_amount(lock_level)
+                if self.player.use(key_to_use, test=False):
+                    self.warning_message = f"You used {lock_level} key(s) to unlock the door."
+                    
+                    # Déverrouiller les portes
+                    current_room.unlock_exit(direction)
+                    if target_room is not None:
+                        opposite_direction = (direction + 2) % 4
+                        target_room.unlock_exit(opposite_direction)
+
+                    # déplacer ou tirer la nouvelle pièce
+                    if target_room is None:
+                        # La case est vide => tire une nouvelle salle.
+                        self.sound_to_play = 'new_room'
+                        self.game_state = "DRAWING_ROOM"
+                        self.pending_placement_position = final_position
+                        # On calcule la direction d'entrée (opposée à la direction de mouvement)
+                        self.pending_entry_direction = (direction + 2) % 4
+                        self.draw_new_rooms()
+                        # On ne déplace pas le joueur car select_room_choice s'en chargera.
+                    
+                    else:
+                        # La case contient une salle existante donc on se déplace normalement
+                        self.sound_to_play = 'footsteps'
+                        if self.player.use(player_Footsteps.return_item_with_amount(1)):
+                            self.player.move(final_position)
+                            # new_room est simplement le target_room qu'on connait déjà
+                            new_room = target_room
+                            new_room.on_entry(self)
+                            self.check_game_status()
+                        else:
+                            self.warning_message = "GAME OVER !"
+                else:
+                    # normalement ne devrait jamais arriver car on a déjà testé avant la confirmation
+                    self.warning_message = "You don't have enough keys after all."
+            
+            else: # non
+                self.warning_message = "You decided not to open the door."
+
+            # Si on n'est pas passé en mode tirage, on retourne à l'exploration
+            if self.game_state != "DRAWING_ROOM":
+                self.game_state = "EXPLORING"
+                
+            self.pending_door_confirmation = None   
+            self.action_index = 0
     def publish_data(self):
         """
         Donne toutes les données pertinnents pour l'affichage, a ajouter les nouvelles données ici.
@@ -406,6 +488,7 @@ class Game:
 
         # confirmation d'action
         self.data['pending_confirmation'] = self.pending_confirmation
+        self.data['pending_door_confirmation'] = self.pending_door_confirmation
         # items dans la salle
         current_room = self.map.get_current_mapping()[self.player.position]
         self.data['roomactions'] = current_room.inventories.get_action_messages()
