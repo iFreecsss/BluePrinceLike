@@ -7,7 +7,7 @@ game_logic = Game()
 
 while(True):
     game_interface.set_data(game_logic.publish_data())
-    inputs = game_interface.run()
+    inputs = game_interface.run() 
 
     if "RESTART_GAME" in inputs:
         game_logic = Game()

@@ -28,22 +28,31 @@ class Player:
     
     def face(self,direction):
         self.direction = direction
-    def check_Item(self,condition : Item, item: Item):
+    def check_Item(self,condition : Item, item: Item, test=False):
         inventory = self.inventory.inventory
         if not condition: 
+            if test: return True # si pas de condition, on peut toujours faire l'action
             if item.name in inventory:
                 inventory[item.name].add(item.quantity) 
             else:
                 item.use(self, item.quantity)
             return True
         elif condition.name in inventory:
-            return self.use(item)
+            return self.use(condition, test=test)
         else:
             return False
         
-    def use(self, item : Item):
+    def use(self, item : Item, test=False):
         if item and (not isinstance(item,Inventory)):
             inventory = self.inventory.inventory
+
+            if test:
+                # On vérifie juste si on a assez, on ne consomme rien
+                if item.name in inventory and inventory[item.name].quantity >= item.quantity:
+                    return True
+                else:
+                    return False
+                
             result = item.use(self, item.quantity)
             return result
         else:

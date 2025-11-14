@@ -46,13 +46,14 @@ class Inventory:
     
 
 class RoomObject():
-    def __init__(self, name, item, activation_condition, action_message, action_sucess, action_failure):
+    def __init__(self, name, item, activation_condition, action_message, action_sucess, action_failure, confirmation=False):
         self.name = name
         self.item = item
         self.activation_condition = activation_condition
         self.action_message = action_message
         self.action_success = action_sucess
         self.action_failure = action_failure
+        self.confirmation = confirmation
     """
     @property
     def name(self):
@@ -96,8 +97,8 @@ class Room_Inventory():
             messages.append(item.action_message)
         return messages
     
-    def checkInv_activation_condition(self, player, room_object : RoomObject):
-        result = player.check_Item(room_object.activation_condition, room_object.item)
+    def checkInv_activation_condition(self, player, room_object : RoomObject, test=False):
+        result = player.check_Item(room_object.activation_condition, room_object.item, test=test)
         return result
 
     def set_inventory(self, inventory):
@@ -107,10 +108,38 @@ class Room_Inventory():
         inventory = self
         return inventory
 
-    def handle_action(self, player, action_index):
+    def handle_action(self, player, action_index, force=False):
         if len(self.inventory) > 0:
             item_to_act_upon = self.inventory[action_index]
-            result = self.checkInv_activation_condition(player, item_to_act_upon)
+            if item_to_act_upon.confirmation and not force:
+
+                test = False
+
+                if player.inventory.get_quantity("Hammer") > 0:
+                    test = True
+                    
+                result = self.checkInv_activation_condition(player, item_to_act_upon, test=test)
+
+                if result == 1:
+                    # le joueur a la clé ? on demande confirmation
+                    if player.inventory.get_quantity("Hammer") > 0:
+                        cost_item_name = item_to_act_upon.activation_condition.name
+                        return ("CONFIRM", f"Do you want to break this {item_to_act_upon.name} to get its items ?")
+
+                    cost_item_name = item_to_act_upon.activation_condition.name
+                    cost_amount = item_to_act_upon.activation_condition.quantity
+                    return ("CONFIRM", f"Do you want to opne this {item_to_act_upon.name} for {cost_amount} {cost_item_name} ?")
+                else:
+                    # Le joueur ne peut pas de toute façon donc on affiche l'échec
+                    return item_to_act_upon.action_failure
+                
+            # On doit refaire le check pour le marteau ici avant l'exécution
+            test = False
+            if item_to_act_upon.confirmation and player.inventory.get_quantity("Hammer") > 0:
+                test = True
+                
+            result = self.checkInv_activation_condition(player, item_to_act_upon, test=test)
+            # --- FIN DE LA CORRECTION ---
 
             if result == 1:
                 msg = item_to_act_upon.action_success
@@ -137,7 +166,7 @@ room_Diamond = RoomObject("Diamond", player_Diamond.return_item_with_amount(1), 
 room_Coin = RoomObject("Coin", player_Coin.return_item_with_amount(1), None, "Take Coin", "You took a coin!", "Couldn't take item")
 
 # Je met none pour ensuite gérer le remplissage à partir de random manager
-room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:")
+room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:", confirmation=True)
 room_Hole = RoomObject("Hole", None, player_shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
 
 room_hammer = RoomObject("Hammer", player_hammer, None, "Take Hammer", "You took the Hammer!", "Couldn't take item")
