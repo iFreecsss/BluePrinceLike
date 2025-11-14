@@ -14,7 +14,7 @@ class Game:
         self.warning_message = None
 
         self.player.inventory.add_item(player_Diamond.return_item_with_amount(10))
-        self.player.inventory.add_item(player_Key.return_item_with_amount(15))
+        self.player.inventory.add_item(player_Key.return_item_with_amount(150))
         self.player.inventory.add_item(player_Footsteps.return_item_with_amount(70))
         self.player.inventory.add_item(player_Dice.return_item_with_amount(6))
         self.player.inventory.add_item(player_Coin.return_item_with_amount(100))
@@ -40,6 +40,9 @@ class Game:
 
         # mémorise la direction par laquelle on entre
         self.pending_entry_direction = None
+
+        # pour la gestion des confirmations d'actions (ex: ouvrir un coffre)
+        self.pending_confirmation = None
 
         # pour la gestion des items au sol
         self.current_floor_item_index = 0
@@ -253,9 +256,21 @@ class Game:
                 if i in action_selection:
                     self.handle_action_index(i) #Modifie l'index de l'action
                 if i in action_confirmation:
-                    self.warning_message = inventory.handle_action(self.player,self.action_index)
-                    self.possible_actions = inventory.get_action_number()
-                    self.handle_action_index(i)
+                    action_result = inventory.handle_action(self.player,self.action_index) # force à false par défaut
+                    if isinstance(action_result, tuple) and action_result[0] == "CONFIRM":
+                        # L'action a besoin d'une confirmation
+                        self.game_state = "ACTION_CONFIRMATION"
+                        # On stocke l'index de l'action et le message
+                        self.pending_confirmation = {
+                            "index": self.action_index,
+                            "message": action_result[1]
+                        }
+                        self.current_choice_index = 0 # Par défaut sur oui
+                    else:
+                        # Sinon c'est que c'est une action normale donc pas de confirmation nécessaire
+                        self.warning_message = action_result
+                        self.possible_actions = inventory.get_action_number()
+                        self.handle_action_index(i) # Reset l'index
                         
             if "ROTATE_ROOM" in inputs:
                 # on récupère la salle actuelle
@@ -281,6 +296,15 @@ class Game:
                 elif i == "REROLL":
                     self.handle_reroll()
                     break
+
+
+        elif self.game_state == "ACTION_CONFIRMATION":
+            for i in inputs:
+                if i in ["LEFT_ROOM", "RIGHT_ROOM", "ENTER", "SPACE"]:
+                    self.handle_confirmation(i)
+                    break # On ne traite qu'un input de confirmation à la fois
+
+
 
         elif self.game_state == "COLLECTING_ITEMS":
             #Pour le débug, on apparente le game_state COLLECTING_ITEMS à EXPLORING
@@ -339,6 +363,31 @@ class Game:
         else:
             self.warning_message = "You don't have any Dice to reroll."
 
+    def handle_confirmation(self, input):
+        """Gère les confirmations d'actions (ex: ouvrir un coffre)"""
+        if input == "LEFT_ROOM":
+            self.current_choice_index = 0 # oui
+        elif input == "RIGHT_ROOM":
+            self.current_choice_index = 1 # "Non"
+        elif input in ["SPACE", "ENTER"]:
+            # Le joueur a confirmé son choix
+            
+            if self.current_choice_index == 0: # "OUI"
+                action_index = self.pending_confirmation["index"]
+                current_room = self.map.get_current_mapping()[self.player.position]
+                # On appelle à nouveau handle_action, mais en FORÇANT l'exécution
+                self.warning_message = current_room.inventories.handle_action(self.player, action_index, force=True)
+            else: # "NON"
+                self.warning_message = "Action annulée."
+
+            # On nettoie et on retourne à l'exploration
+            self.game_state = "EXPLORING"
+            self.pending_confirmation = None
+            current_room = self.map.get_current_mapping()[self.player.position]
+            self.possible_actions = current_room.inventories.get_action_number()
+            self.action_index = 0
+
+
     def publish_data(self):
         """
         Donne toutes les données pertinnents pour l'affichage, a ajouter les nouvelles données ici.
@@ -354,7 +403,9 @@ class Game:
         self.data['current_choice_index'] = self.current_choice_index
         self.data['warning_message'] = self.warning_message
         self.warning_message = None # on le réinitialise pour l'envoyé qu'une seule fois
-        
+
+        # confirmation d'action
+        self.data['pending_confirmation'] = self.pending_confirmation
         # items dans la salle
         current_room = self.map.get_current_mapping()[self.player.position]
         self.data['roomactions'] = current_room.inventories.get_action_messages()
