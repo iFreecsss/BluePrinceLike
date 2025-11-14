@@ -37,7 +37,7 @@ class Player:
                 item.use(self, item.quantity)
             return True
         elif condition.name in inventory:
-            return self.use(item)
+            return self.use(condition)
         else:
             return False
         
