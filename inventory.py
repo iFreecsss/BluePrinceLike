@@ -232,8 +232,6 @@ Inventory Type Item [name]
 The index of the element in each list represents the parameter.
 """
 #Room Item - Name, Item to collect/interact with, Activation Condition (None if No item needed to interact),"Action Msg", "Action Sucess", "Action Failure"
-
-
 room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
 room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
 room_Diamond = RoomObject("Diamond", player_Diamond.return_item_with_amount(1), None, "Take _0 x _1", "You took _1 _0(s)","Couldn't take item")

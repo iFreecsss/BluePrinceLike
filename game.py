@@ -181,8 +181,7 @@ class Game:
                 
                 self.check_game_status() # on vérifie si on a gagné ou perdu
             else:
-                # Si plus de pas faudra implémenter le game over
-                self.warning_message = "GAME OVER !"
+                self.check_game_over()
 
     def handle_room_selection(self, input):
         """
@@ -456,7 +455,7 @@ class Game:
                             new_room.on_entry(self)
                             self.check_game_status()
                         else:
-                            self.warning_message = "GAME OVER !"
+                            self.check_game_over()
                 else:
                     # normalement ne devrait jamais arriver car on a déjà testé avant la confirmation
                     self.warning_message = "You don't have enough keys after all."
@@ -465,7 +464,7 @@ class Game:
                 self.warning_message = "You decided not to open the door."
 
             # Si on n'est pas passé en mode tirage, on retourne à l'exploration
-            if self.game_state != "DRAWING_ROOM":
+            if self.game_state not in ["DRAWING_ROOM", "VICTORY", "GAME_OVER"]:
                 self.game_state = "EXPLORING"
                 
             self.pending_door_confirmation = None   
@@ -517,7 +516,7 @@ class Game:
             
             # Ne devrait jamais arriver mais on sait jamais
             if not self.room_choices:
-                print(f"ERREUR: Aucune pièce du deck ne peut être placée à {self.pending_placement_position}!")
+                print(f"ERROR: No room from the deck can be placed at {self.pending_placement_position}!")
                 self.game_state = "EXPLORING"
                 self.pending_placement_position = None
                 return
@@ -549,8 +548,7 @@ class Game:
 
         # si plus de pas game over 
         if player_footsteps <= 0:
-            # faudra implementer le game over et donc le changement d'état de jeu ici aussi 
-            self.warning_message = "GAME OVER !"
+            self.check_game_over()
             return
         if player_diamonds >= room_cost:
             # Le joueur peut payer en diamants et en pas
@@ -614,7 +612,7 @@ class Game:
 
         if not valid_rotations:
             # Normalement c'est pas possible mais on sait jamais
-            print(f"Erreur critique: La pièce '{room.name}' n'a pas de rotation valide.")
+            print(f"Critical Error: Room '{room.name}' has no valid rotation.")
             self.game_state = "EXPLORING"
             self.room_choices = []
             self.pending_placement_position = None
@@ -646,6 +644,38 @@ class Game:
         
         if self.player.position == VICTORY_POSITION:
             self.game_state = "VICTORY"
+            self.sound_to_play = "victory"
             return
         
-        # faudra rajouter la condition de défaite
+    def check_game_over(self):
+        """
+        Vérifie si le joueur a perdu.
+        La défaite survient à 0 pas, SEULEMENT s'il n'y a plus
+        d'objets donnant des pas (Pomme, Banane) à ramasser
+        dans la salle actuelle.
+        """
+        # si le jeu est déjà gagné ou perdu, on ne fait rien
+        if self.game_state in ["VICTORY", "GAME_OVER"]:
+            return
+
+        current_steps = self.player.inventory.get_quantity("Footsteps")
+        
+        if current_steps <= 0:
+            # verification des objets dispo dans la salle du joueur
+            current_room = self.map.get_current_mapping()[self.player.position]
+            room_inventory_list = current_room.inventories.inventory
+            
+            step_item_available = False
+            for room_action in room_inventory_list:
+                
+                if room_action.name in ["Apple", "Banana"]:
+                    step_item_available = True
+                    break
+            
+            if not step_item_available:
+                # 0 pas et aucune pomme/banane à ramasser = GAME OVER
+                self.game_state = "GAME_OVER"
+                self.sound_to_play = "game_over"
+            else:
+                # 0 pas mais il y a des objets à ramasser
+                self.warning_message = "You are out of steps! You must collect the items in this room."

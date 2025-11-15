@@ -94,6 +94,12 @@ class UI:
         
         self.rotate_sound = pygame.mixer.Sound('Sounds/Effects/rotate.wav')
         self.rotate_sound.set_volume(0.4)
+        
+        self.game_over_sound = pygame.mixer.Sound('Sounds/Effects/lose.wav')
+        self.game_over_sound.set_volume(0.5)
+        
+        self.victory_sound = pygame.mixer.Sound('Sounds/Effects/victory.wav')
+        self.victory_sound.set_volume(0.5)
 
     def init_images(self):
         # icone restart
@@ -118,6 +124,35 @@ class UI:
 
         self.item_icon_cache = {}
         self.room_image_cache = {}
+
+    def _wrap_text(self, text, font, max_width):
+        """
+        Coupe un texte en plusieurs lignes pour qu'il ne dépasse pas
+        une largeur maximale (max_width).
+        Prend en compte les retours à la ligne manuels ('\n').
+        """
+        lines = []
+        
+        paragraphs = text.split('\n')
+        
+        for paragraph in paragraphs:
+            words = paragraph.split(' ')
+            current_line = ""
+            
+            for word in words:
+                # vérifier la largeur avec le mot suivant
+                test_line = current_line + word + " "
+                
+                if font.size(test_line)[0] < max_width:
+                    current_line = test_line
+                else:
+                    # Le mot dépasse, on sauvegarde la ligne précédente
+                    lines.append(current_line.strip())
+                    current_line = word + " "   # le nouveau mot commence la ligne suivante
+            
+            lines.append(current_line.strip())  # ajouter la dernière ligne du paragraphe
+            
+        return lines
 
     def create_layout(self):
         #Définition des dimensions des différentes parties de l'UI
@@ -383,6 +418,12 @@ class UI:
             self.dice_sound.play()
         elif sound_request == 'rotate':
             self.rotate_sound.play()
+        elif sound_request == 'game_over':
+            pygame.mixer.music.stop()
+            self.game_over_sound.play()
+        elif sound_request == 'victory':
+            pygame.mixer.music.stop()
+            self.victory_sound.play()
         
         music_vol = self.data.get('music_volume', 0.4)
         effects_vol = self.data.get('effects_volume', 0.7)
@@ -397,6 +438,8 @@ class UI:
         if self.new_room_sound: self.new_room_sound.set_volume(final_effects_vol)
         if self.footsteps_sound: self.footsteps_sound.set_volume(final_effects_vol)
         if self.rotate_sound: self.rotate_sound.set_volume(final_effects_vol)
+        if self.game_over_sound: self.game_over_sound.set_volume(final_effects_vol)
+        if self.victory_sound: self.victory_sound.set_volume(final_effects_vol)
 
         # gestion des messages d'avertissement
         new_message = self.data.get('warning_message')
@@ -407,24 +450,47 @@ class UI:
             
     def draw_warning_message(self):
         """
-        Affiche le message d'avertissement au centre de la carte s'il existe
+        Affiche le message d'avertissement au centre de la CARTE s'il existe
         et si son minuteur n'est pas écoulé.
+        Gère maintenant les messages sur plusieurs lignes.
         """
         if self.message_text:
             current_time = pygame.time.get_ticks()
             
             if current_time - self.message_timer < self.MESSAGE_DURATION:
                 
-                text_surface = self.message_font.render(self.message_text, True, self.COLOR_MESSAGE_TEXT)
-                text_rect = text_surface.get_rect(center=self.main_view_rect.center) # centré sur la map
+                max_width = self.main_view_rect.width - 40 # marge de 40px
                 
-                # fond semi-transparent
-                bg_rect = text_rect.inflate(20, 10) # 20px de marge H, 10px de marge V
+                wrapped_lines = self._wrap_text(self.message_text, self.message_font, max_width)
+                
+                line_surfaces = []
+                total_height = 0
+                max_line_width = 0
+                
+                for line in wrapped_lines:
+                    surf = self.message_font.render(line, True, self.COLOR_MESSAGE_TEXT)
+                    line_surfaces.append(surf)
+                    
+                    # hauteur totale et la largeur max
+                    total_height += surf.get_height()
+                    if surf.get_width() > max_line_width:
+                        max_line_width = surf.get_width()
+                bg_rect = pygame.Rect(0, 0, max_line_width + 40, total_height + 20)
+                
+                # Centrer sur la vue de la carte
+                bg_rect.center = self.main_view_rect.center
+                
                 bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
-                bg_surface.fill((0, 0, 0, 150)) # Noir semi-transparent
+                bg_surface.fill((0, 0, 0, 150)) # noir semi-transparent
                 
                 self.display_surface.blit(bg_surface, bg_rect)
-                self.display_surface.blit(text_surface, text_rect)
+                
+                current_y = bg_rect.top + 10
+                for surf in line_surfaces:
+                    # centrer chaque ligne horizontalement dans le fond
+                    line_rect = surf.get_rect(centerx=bg_rect.centerx, top=current_y)
+                    self.display_surface.blit(surf, line_rect)
+                    current_y += surf.get_height() # passer à la ligne suivante
                 
             else:
                 # le temps est écoulé on efface le message
@@ -486,6 +552,41 @@ class UI:
             "Press Escape to exit.",
             True,
             self.COLOR_GRID_LIGHT # Couleur discrète
+        )
+        quit_text_rect = quit_text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 60)
+        )
+        self.display_surface.blit(quit_text_surface, quit_text_rect)
+    
+    def draw_game_over_screen(self):
+        """
+        Affiche l'écran de Game Over.
+        """
+        self.display_surface.fill(self.COLOR_BACKGROUND)
+        
+        game_over_font = pygame.font.SysFont('Arial', 80, bold=True)
+        # couleur rouge
+        text_surface = game_over_font.render("GAME OVER", True, (200, 0, 0))
+        
+        text_rect = text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT / 2 - 50)
+        )
+        self.display_surface.blit(text_surface, text_rect)
+
+        sub_text_surface = self.font.render(
+            "You have run out of footsteps...",
+            True,
+            self.COLOR_PANEL_BORDER
+        )
+        sub_text_rect = sub_text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT / 2 + 40)
+        )
+        self.display_surface.blit(sub_text_surface, sub_text_rect)
+
+        quit_text_surface = self.font.render(
+            "Press Escape to exit.",
+            True,
+            self.COLOR_GRID_LIGHT
         )
         quit_text_rect = quit_text_surface.get_rect(
             center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 60)
@@ -772,8 +873,8 @@ class UI:
         self.display_surface.blit(msg_surface, msg_rect)
 
         # Options 
-        yes_text = "Oui"
-        no_text = "Non"
+        yes_text = "Yes"
+        no_text = "No"
 
         yes_size = self.font.size(yes_text)
         no_size = self.font.size(no_text)
@@ -805,7 +906,7 @@ class UI:
         if not pending_data:
             return
         
-        message = pending_data.get("message", "Confirmer l'action ?")
+        message = pending_data.get("message", "Confirm action ?")
         # On réutilise current_choice_index (0=Oui, 1=Non)
         current_index = self.data.get('current_choice_index', 0) 
 
@@ -827,8 +928,8 @@ class UI:
         self.display_surface.blit(msg_surface, msg_rect)
 
         # Options 
-        yes_text = "Oui"
-        no_text = "Non"
+        yes_text = "Yes"
+        no_text = "No"
 
         yes_size = self.font.size(yes_text)
         no_size = self.font.size(no_text)
@@ -936,6 +1037,8 @@ class UI:
         if game_state == "VICTORY":
                 # si on gagne on dessine l'écran de victoire
                 self.draw_victory_screen()
+        elif game_state == "GAME_OVER":
+                self.draw_game_over_screen()
         
         if "QUIT_GAME" in inputs:
             pygame.quit()
@@ -962,7 +1065,7 @@ class UI:
 
         self.display_surface.blit(self.settings_icon, self.settings_icon_rect)
 
-        if game_state != "VICTORY":
+        if game_state not in ["VICTORY", "GAME_OVER"]:
             self.draw_warning_message()
             self.display_Player(self.data['position'],self.data['direction'])
 
