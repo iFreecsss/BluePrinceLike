@@ -87,11 +87,13 @@ class RoomObject():
         if isinstance(self.item,NonConsumableItem):
             replacements = [self.item.name]
         if isinstance(self.item,RegenerativeItem):
-            replacements = [self.item.name, self.item.quantity, self.item.regenerate.name, self.item.regenerate.quantity]
+            replacements = [self.item.name, self.item.quantity, self.item.regenerate.name, (self.item.regenerate.quantity * self.item.quantity)]
 
         self.action_message = self.string_to_message(self.action_message,replacements)
         self.action_success = self.string_to_message(self.action_success,replacements)
         self.action_failure = self.string_to_message(self.action_failure,replacements)
+    
+
         
 
 

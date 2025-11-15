@@ -11,7 +11,9 @@ class Item(ABC):
         self.description = description
         self.image_path = image_path
         self.quantity = quantity
-        
+    
+    def set_quantity(self, quantity):
+        self.quantity = quantity
     @abstractmethod
     def use(self, player, amount):
         """

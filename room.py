@@ -837,3 +837,17 @@ class Kitchen(RoomObject):
 
         self.inventories.inventory = room_Menu.inventory
         game_logic.warning_message = "Come and eat for a reasonable price!"
+    
+    def on_entry(self, game_logic):
+        """
+        Reset les valeurs à chaque fois que le joueur rentre dans la chambre
+        """
+        for item in self.inventories.inventory:
+            if item.name == "Chef Salad":
+                room_number = self.return_number_room_type(game_logic, 'Green Room')
+                item.item.quantity = room_number 
+                item.set_message()
+            elif item.item.name == "Tomato Soup":
+                room_number = self.return_number_room_type(game_logic, 'Red Room')
+                item.item.quantity = room_number
+                item.set_message()

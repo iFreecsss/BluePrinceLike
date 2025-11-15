@@ -40,7 +40,7 @@ class Player:
             return True
         elif condition.name in inventory:
             result = self.use(condition, test=test)
-            if result == True:
+            if result == True and (not isinstance(item,Inventory)):
                 item.use(self, item.quantity)
             return result
         else:
