@@ -119,6 +119,35 @@ class UI:
         self.item_icon_cache = {}
         self.room_image_cache = {}
 
+    def _wrap_text(self, text, font, max_width):
+        """
+        Coupe un texte en plusieurs lignes pour qu'il ne dépasse pas
+        une largeur maximale (max_width).
+        Prend en compte les retours à la ligne manuels ('\n').
+        """
+        lines = []
+        
+        paragraphs = text.split('\n')
+        
+        for paragraph in paragraphs:
+            words = paragraph.split(' ')
+            current_line = ""
+            
+            for word in words:
+                # vérifier la largeur avec le mot suivant
+                test_line = current_line + word + " "
+                
+                if font.size(test_line)[0] < max_width:
+                    current_line = test_line
+                else:
+                    # Le mot dépasse, on sauvegarde la ligne précédente
+                    lines.append(current_line.strip())
+                    current_line = word + " "   # le nouveau mot commence la ligne suivante
+            
+            lines.append(current_line.strip())  # ajouter la dernière ligne du paragraphe
+            
+        return lines
+
     def create_layout(self):
         #Définition des dimensions des différentes parties de l'UI
         self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT = 680,200
@@ -407,24 +436,47 @@ class UI:
             
     def draw_warning_message(self):
         """
-        Affiche le message d'avertissement au centre de la carte s'il existe
+        Affiche le message d'avertissement au centre de la CARTE s'il existe
         et si son minuteur n'est pas écoulé.
+        Gère maintenant les messages sur plusieurs lignes.
         """
         if self.message_text:
             current_time = pygame.time.get_ticks()
             
             if current_time - self.message_timer < self.MESSAGE_DURATION:
                 
-                text_surface = self.message_font.render(self.message_text, True, self.COLOR_MESSAGE_TEXT)
-                text_rect = text_surface.get_rect(center=self.main_view_rect.center) # centré sur la map
+                max_width = self.main_view_rect.width - 40 # marge de 40px
                 
-                # fond semi-transparent
-                bg_rect = text_rect.inflate(20, 10) # 20px de marge H, 10px de marge V
+                wrapped_lines = self._wrap_text(self.message_text, self.message_font, max_width)
+                
+                line_surfaces = []
+                total_height = 0
+                max_line_width = 0
+                
+                for line in wrapped_lines:
+                    surf = self.message_font.render(line, True, self.COLOR_MESSAGE_TEXT)
+                    line_surfaces.append(surf)
+                    
+                    # hauteur totale et la largeur max
+                    total_height += surf.get_height()
+                    if surf.get_width() > max_line_width:
+                        max_line_width = surf.get_width()
+                bg_rect = pygame.Rect(0, 0, max_line_width + 40, total_height + 20)
+                
+                # Centrer sur la vue de la carte
+                bg_rect.center = self.main_view_rect.center
+                
                 bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
-                bg_surface.fill((0, 0, 0, 150)) # Noir semi-transparent
+                bg_surface.fill((0, 0, 0, 150)) # noir semi-transparent
                 
                 self.display_surface.blit(bg_surface, bg_rect)
-                self.display_surface.blit(text_surface, text_rect)
+                
+                current_y = bg_rect.top + 10
+                for surf in line_surfaces:
+                    # centrer chaque ligne horizontalement dans le fond
+                    line_rect = surf.get_rect(centerx=bg_rect.centerx, top=current_y)
+                    self.display_surface.blit(surf, line_rect)
+                    current_y += surf.get_height() # passer à la ligne suivante
                 
             else:
                 # le temps est écoulé on efface le message
@@ -772,8 +824,8 @@ class UI:
         self.display_surface.blit(msg_surface, msg_rect)
 
         # Options 
-        yes_text = "Oui"
-        no_text = "Non"
+        yes_text = "Yes"
+        no_text = "No"
 
         yes_size = self.font.size(yes_text)
         no_size = self.font.size(no_text)
@@ -805,7 +857,7 @@ class UI:
         if not pending_data:
             return
         
-        message = pending_data.get("message", "Confirmer l'action ?")
+        message = pending_data.get("message", "Confirm action ?")
         # On réutilise current_choice_index (0=Oui, 1=Non)
         current_index = self.data.get('current_choice_index', 0) 
 
@@ -827,8 +879,8 @@ class UI:
         self.display_surface.blit(msg_surface, msg_rect)
 
         # Options 
-        yes_text = "Oui"
-        no_text = "Non"
+        yes_text = "Yes"
+        no_text = "No"
 
         yes_size = self.font.size(yes_text)
         no_size = self.font.size(no_text)
