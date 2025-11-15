@@ -94,6 +94,12 @@ class UI:
         
         self.rotate_sound = pygame.mixer.Sound('Sounds/Effects/rotate.wav')
         self.rotate_sound.set_volume(0.4)
+        
+        self.game_over_sound = pygame.mixer.Sound('Sounds/Effects/lose.wav')
+        self.game_over_sound.set_volume(0.5)
+        
+        self.victory_sound = pygame.mixer.Sound('Sounds/Effects/victory.wav')
+        self.victory_sound.set_volume(0.5)
 
     def init_images(self):
         # icone restart
@@ -412,6 +418,12 @@ class UI:
             self.dice_sound.play()
         elif sound_request == 'rotate':
             self.rotate_sound.play()
+        elif sound_request == 'game_over':
+            pygame.mixer.music.stop()
+            self.game_over_sound.play()
+        elif sound_request == 'victory':
+            pygame.mixer.music.stop()
+            self.victory_sound.play()
         
         music_vol = self.data.get('music_volume', 0.4)
         effects_vol = self.data.get('effects_volume', 0.7)
@@ -426,6 +438,8 @@ class UI:
         if self.new_room_sound: self.new_room_sound.set_volume(final_effects_vol)
         if self.footsteps_sound: self.footsteps_sound.set_volume(final_effects_vol)
         if self.rotate_sound: self.rotate_sound.set_volume(final_effects_vol)
+        if self.game_over_sound: self.game_over_sound.set_volume(final_effects_vol)
+        if self.victory_sound: self.victory_sound.set_volume(final_effects_vol)
 
         # gestion des messages d'avertissement
         new_message = self.data.get('warning_message')
@@ -538,6 +552,41 @@ class UI:
             "Press Escape to exit.",
             True,
             self.COLOR_GRID_LIGHT # Couleur discrète
+        )
+        quit_text_rect = quit_text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 60)
+        )
+        self.display_surface.blit(quit_text_surface, quit_text_rect)
+    
+    def draw_game_over_screen(self):
+        """
+        Affiche l'écran de Game Over.
+        """
+        self.display_surface.fill(self.COLOR_BACKGROUND)
+        
+        game_over_font = pygame.font.SysFont('Arial', 80, bold=True)
+        # couleur rouge
+        text_surface = game_over_font.render("GAME OVER", True, (200, 0, 0))
+        
+        text_rect = text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT / 2 - 50)
+        )
+        self.display_surface.blit(text_surface, text_rect)
+
+        sub_text_surface = self.font.render(
+            "You have run out of footsteps...",
+            True,
+            self.COLOR_PANEL_BORDER
+        )
+        sub_text_rect = sub_text_surface.get_rect(
+            center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT / 2 + 40)
+        )
+        self.display_surface.blit(sub_text_surface, sub_text_rect)
+
+        quit_text_surface = self.font.render(
+            "Press Escape to exit.",
+            True,
+            self.COLOR_GRID_LIGHT
         )
         quit_text_rect = quit_text_surface.get_rect(
             center=(self.SCREEN_WIDTH / 2, self.SCREEN_HEIGHT - 60)
@@ -988,6 +1037,8 @@ class UI:
         if game_state == "VICTORY":
                 # si on gagne on dessine l'écran de victoire
                 self.draw_victory_screen()
+        elif game_state == "GAME_OVER":
+                self.draw_game_over_screen()
         
         if "QUIT_GAME" in inputs:
             pygame.quit()
@@ -1014,7 +1065,7 @@ class UI:
 
         self.display_surface.blit(self.settings_icon, self.settings_icon_rect)
 
-        if game_state != "VICTORY":
+        if game_state not in ["VICTORY", "GAME_OVER"]:
             self.draw_warning_message()
             self.display_Player(self.data['position'],self.data['direction'])
 
