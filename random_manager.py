@@ -87,9 +87,11 @@ class RandomManager:
             (room_Banana, 15),
             (room_Dice, 5),
             (room_Key, 10),
-            (room_Chest, 85),
+            (room_Chest, 5),
             (room_Hole, 5),
-            (room_Coin, 10)
+            (room_Coin, 10), 
+            (room_Diamond, 5),
+            (room_locker, 90)
         ]
 
         self.room_actions = [item[0] for item in self.room_action_pool]
@@ -381,6 +383,11 @@ class RandomManager:
                     loot_inv = self.generate_random_loot_inventory(player, "Hole")
                     # On assigne cet inventaire à l'attribut item du trou
                     new_action_copy.item = loot_inv
+                elif new_action_copy.name == "Locker":
+                    # On génère un inventaire de butin aléatoire pour le casier
+                    loot_inv = self.generate_random_loot_inventory(player, "Locker")
+                    # On assigne cet inventaire à l'attribut item du casier
+                    new_action_copy.item = loot_inv
 
                 new_room_inventory.addInventory(new_action_copy)
         
@@ -396,6 +403,11 @@ class RandomManager:
         # Le coffre contiendra entre 1 et 3 items
         num_items = random.randint(2, 3) 
 
+        # Ajout d'une chance que le trou soit vide (j'ai vu ça dans l'énoncé)
+        if type_of_contenent in ["Hole", "Locker"]:
+            empty_chance = 0.15
+            if random.random() < empty_chance:
+                return loot_inventory
 
         # J'AI DESACTIVE CAR DANS L'ENONCE DU PROF C'EST ECRIT "DANS LE MANOIR" 
         # je pense que implicitement c'est "pas dans les coffres ou autres contenants"
@@ -409,6 +421,10 @@ class RandomManager:
             loot = self.hole_loot_items
             weights = self.hole_loot_weights
         if type_of_contenent == "Chest":
+            loot = self.chest_loot_items
+            weights = self.chest_loot_weights
+        if type_of_contenent == "Locker":
+            # le casier utilise le même pool que le coffre
             loot = self.chest_loot_items
             weights = self.chest_loot_weights
 
