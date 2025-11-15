@@ -517,7 +517,7 @@ class Game:
             
             # Ne devrait jamais arriver mais on sait jamais
             if not self.room_choices:
-                print(f"ERREUR: Aucune pièce du deck ne peut être placée à {self.pending_placement_position}!")
+                print(f"ERROR: No room from the deck can be placed at {self.pending_placement_position}!")
                 self.game_state = "EXPLORING"
                 self.pending_placement_position = None
                 return
@@ -614,7 +614,7 @@ class Game:
 
         if not valid_rotations:
             # Normalement c'est pas possible mais on sait jamais
-            print(f"Erreur critique: La pièce '{room.name}' n'a pas de rotation valide.")
+            print(f"Critical Error: Room '{room.name}' has no valid rotation.")
             self.game_state = "EXPLORING"
             self.room_choices = []
             self.pending_placement_position = None
