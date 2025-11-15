@@ -128,7 +128,7 @@ class Room_Inventory():
 
                     cost_item_name = item_to_act_upon.activation_condition.name
                     cost_amount = item_to_act_upon.activation_condition.quantity
-                    return ("CONFIRM", f"Do you want to opne this {item_to_act_upon.name} for {cost_amount} {cost_item_name} ?")
+                    return ("CONFIRM", f"Do you want to open this {item_to_act_upon.name} for {cost_amount} {cost_item_name} ?")
                 else:
                     # Le joueur ne peut pas de toute façon donc on affiche l'échec
                     return item_to_act_upon.action_failure
@@ -176,7 +176,7 @@ class Room_Inventory():
 #Room Item - Name, Item to collect/interact with, Activation Condition (None if No item needed to interact),"Action Msg", "Action Sucess", "Action Failure"
 
 room_Apple = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Take Apple", "You took the apples!","Couldn't take item")
-room_Banana = RoomObject("Banan", player_Banana.return_item_with_amount(1),None, "Take Banana", "You took the bananas", "Couldn't take item")
+room_Banana = RoomObject("Banana", player_Banana.return_item_with_amount(1),None, "Take Banana", "You took the bananas", "Couldn't take item")
 room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take Dice", "You took the dices!", "Couldn't take item")
 room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take Key", "You took the keys!", "Couldn't take item")
 room_Shovel = RoomObject("Shovel", player_shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
