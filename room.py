@@ -167,6 +167,31 @@ class Ballroom(RoomObject):
     room_type = 'Room'
     def __init__(self):
         super().__init__("Ballroom", "Images/Rooms/Ballroom.png", base_exits=[0,2])
+    
+    def on_entry(self, game_logic):
+        """
+        Définit le nombre de Gemmes (Diamonds) du joueur à 2,
+        qu'il en ait plus ou moins.
+        """
+        super().on_entry(game_logic)
+        
+        target_gems = 2
+        current_gems = game_logic.player.inventory.get_quantity("Diamond")
+        difference = target_gems - current_gems
+        
+        if difference > 0:
+            # a moins de 2 gemmes on lui en donne
+            item_to_add = player_Diamond.return_item_with_amount(difference)
+            game_logic.player.inventory.add_item(item_to_add) #
+            game_logic.warning_message = f"Your grace at the ball is rewarded. Gems set to {target_gems}!"
+        elif difference < 0:
+            # a plus de 2 gemmes on lui en retire
+            item_to_lose = player_Diamond.return_item_with_amount(abs(difference))
+            game_logic.player.use(item_to_lose) #
+            game_logic.warning_message = f"You paid for the dance. Gems set to {target_gems}!"
+        else:
+            # a 2 gemmes
+            game_logic.warning_message = f"You dance gracefully. Your {target_gems} Gems remain."
 
 class Bedroom(RoomObject):
     rarity = 'common'
@@ -229,6 +254,14 @@ class Chamber_of_Mirrors(RoomObject):
         """
         game_logic.random_manager.allow_duplicates = True
         game_logic.warning_message = "The mirrors reflect reality. Duplicates are now possible!"
+
+class Cloister(RoomObject):
+    rarity = 'uncommon'
+    cost = 3
+    room_type = 'Green Room'
+    placement_constraints = 'INDOOR'
+    def __init__(self):
+        super().__init__("Cloister", "Images/Green Rooms/Cloister.png", base_exits=[0,1,2,3])
 
 class Closet(RoomObject):
     rarity = 'common'
@@ -598,6 +631,13 @@ class Rotunda(RoomObject):
     room_type = 'Room'
     def __init__(self):
         super().__init__("Rotunda", "Images/Rooms/Rotunda.png", base_exits=[1,2])
+    
+    def on_entry(self, game_logic):
+        """
+        Affiche un message informant le joueur qu'il peut pivoter la salle.
+        """
+        super().on_entry(game_logic)
+        game_logic.warning_message = "This room feels strange... \nPress 'T' to rotate it."
 
     def rotate_walls(self):
         """
@@ -757,6 +797,13 @@ class Veranda(RoomObject):
         current_multiplier = game_logic.random_manager.item_spawn_multipliers['Green Room']
         game_logic.random_manager.item_spawn_multipliers['Green Room'] = current_multiplier * 2.0
         game_logic.warning_message = "The garden flourishes! More items in Green Rooms."
+
+class Walkin_Closet(RoomObject):
+    rarity = 'common'
+    cost = 1
+    room_type = 'Room'
+    def __init__(self):
+        super().__init__("Walkin_Closet", "Images/Rooms/Walk-in_Closet.png", base_exits=[2])
 
 class Weight_Room(RoomObject):
     rarity = 'rare'
