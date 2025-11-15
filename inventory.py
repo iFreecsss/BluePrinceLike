@@ -114,15 +114,15 @@ class Room_Inventory():
             if item_to_act_upon.confirmation and not force:
 
                 test = False
-
-                if player.inventory.get_quantity("Hammer") > 0:
+                hammer_check = player.inventory.get_quantity("Hammer") > 0 and item_to_act_upon.name in ["Chest"]
+                if hammer_check:
                     test = True
                     
                 result = self.checkInv_activation_condition(player, item_to_act_upon, test=test)
 
                 if result == 1:
                     # le joueur a la clé ? on demande confirmation
-                    if player.inventory.get_quantity("Hammer") > 0:
+                    if hammer_check:
                         cost_item_name = item_to_act_upon.activation_condition.name
                         return ("CONFIRM", f"Do you want to break this {item_to_act_upon.name} to get its items ?")
 
@@ -135,11 +135,14 @@ class Room_Inventory():
                 
             # On doit refaire le check pour le marteau ici avant l'exécution
             test = False
-            if item_to_act_upon.confirmation and player.inventory.get_quantity("Hammer") > 0:
+
+            # On vérifie le marteau SEULEMENT si c'est un Coffre
+            if (item_to_act_upon.confirmation and 
+                player.inventory.get_quantity("Hammer") > 0 and 
+                item_to_act_upon.name == "Chest"):
                 test = True
                 
             result = self.checkInv_activation_condition(player, item_to_act_upon, test=test)
-            # --- FIN DE LA CORRECTION ---
 
             if result == 1:
 
@@ -149,12 +152,15 @@ class Room_Inventory():
                     loot_items = item_to_act_upon.item.get_all_items()
 
                 # Si c'est un trou et qu'il est vide
-                if item_to_act_upon.name == "Hole" and not loot_items:
+                if item_to_act_upon.name in ["Hole", "Locker"] and not loot_items:
                     self.inventory.pop(action_index)
-                    return "The hole was empty"
+                    if item_to_act_upon.name == "Hole":
+                        return "The hole was empty"
+                    else:
+                        return "The locker was empty"
                 
                 msg = item_to_act_upon.action_success
-                
+
                 if isinstance(item_to_act_upon.item,Inventory):
                     for item in item_to_act_upon.item.get_all_items():
                         self.inventory.append(room_items_dictionary[item.name])
@@ -180,7 +186,7 @@ room_Coin = RoomObject("Coin", player_Coin.return_item_with_amount(1), None, "Ta
 # Je met none pour ensuite gérer le remplissage à partir de random manager
 room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:", confirmation=True)
 room_Hole = RoomObject("Hole", None, player_shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
-
+room_locker = RoomObject("Locker", None, player_Key.return_item_with_amount(1), "Open Locker","You opened the locker!", "You do not have a Key:", confirmation=True)
 room_hammer = RoomObject("Hammer", player_hammer, None, "Take Hammer", "You took the Hammer!", "Couldn't take item")
 room_charm_chroma = RoomObject("Charm Chroma", player_charm_chroma, None, "Take Charm", "You took the Charm!", "Couldn't take item")
 room_Shovel = RoomObject("Shovel", player_shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
