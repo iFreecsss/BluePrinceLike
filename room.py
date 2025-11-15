@@ -105,12 +105,6 @@ class RoomObject:
         """
         return self.items_on_floor
     
-    def clear_items_on_floor(self):
-        """
-        Vide la liste des objets au sol dans la salle.
-        """
-        self.items_on_floor = []
-    
     def on_entry(self, game_logic):
         """
         Applique un effet spécial lorsque le joueur entre dans la pièce.

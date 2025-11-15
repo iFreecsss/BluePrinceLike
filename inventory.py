@@ -142,7 +142,19 @@ class Room_Inventory():
             # --- FIN DE LA CORRECTION ---
 
             if result == 1:
+
+                loot_items = []
+
+                if isinstance(item_to_act_upon.item, Inventory):
+                    loot_items = item_to_act_upon.item.get_all_items()
+
+                # Si c'est un trou et qu'il est vide
+                if item_to_act_upon.name == "Hole" and not loot_items:
+                    self.inventory.pop(action_index)
+                    return "The hole was empty"
+                
                 msg = item_to_act_upon.action_success
+                
                 if isinstance(item_to_act_upon.item,Inventory):
                     for item in item_to_act_upon.item.get_all_items():
                         self.inventory.append(room_items_dictionary[item.name])

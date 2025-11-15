@@ -396,6 +396,11 @@ class RandomManager:
         # Le coffre contiendra entre 1 et 3 items
         num_items = random.randint(2, 3) 
 
+        # Ajout d'une chance que le trou soit vide (j'ai vu ça dans l'énoncé)
+        if type_of_contenent == "Hole":
+            empty_chance = 0.20
+            if random.random() < empty_chance:
+                return loot_inventory
 
         # J'AI DESACTIVE CAR DANS L'ENONCE DU PROF C'EST ECRIT "DANS LE MANOIR" 
         # je pense que implicitement c'est "pas dans les coffres ou autres contenants"
