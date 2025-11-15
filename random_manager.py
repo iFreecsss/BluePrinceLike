@@ -129,6 +129,21 @@ class RandomManager:
 
         self.hole_loot_items = [item[0] for item in self.hole_loot_pool]
         self.hole_loot_weights = [item[1] for item in self.hole_loot_pool]
+        
+        # pour la salle ATTIC
+        self.attic_loot_pool = [
+            (room_Key, 20),
+            (room_Diamond, 20),
+            (room_Coin, 20),
+            (room_Chest, 15),
+            (room_hammer, 5),
+            (room_charm_chroma, 5),
+            (room_metal_detector, 5),
+            (room_lock_picking_kit, 5),
+            (room_Shovel, 5)
+        ]
+        self.attic_loot_items = [item[0] for item in self.attic_loot_pool]
+        self.attic_loot_weights = [item[1] for item in self.attic_loot_pool]
 
     def is_room_placable(self, RoomClass, current_map, position, direction_of_entry):
         """
@@ -145,6 +160,9 @@ class RandomManager:
                 return False
         elif constraints == "EAST":
             if x < 3: # Doit être dans les colonnes 3 ou 4
+                return False
+        elif constraints == "INDOOR":
+            if x != 2: # Doit être dans la colonne 2 (milieu)
                 return False
         
         temp_room = RoomClass() # instance temporaire pour les tests de rotation
@@ -316,83 +334,95 @@ class RandomManager:
 
     def assign_inventories_to_room(self, room_instance: RoomObject, player):
         """
-        Assigne un inventaire d'ACTIONS aléatoire à une salle
+        Assigne un inventaire d'ACTIONS aléatoire à une salle.
+        Prend en compte les salles spéciales (Closet, Attic, etc.)
+        qui ont un nombre d'objets garanti.
         """
-
-        base_spawn_chance = self.item_spawn_chance # la chance de base globale
         
-        # le multiplicateur spécifique au type de cette salle
-        type_multiplier = self.item_spawn_multipliers.get(room_instance.room_type, 1.0)
-        
-        charm_multiplier = 1.0
-        actions_weights = [50, 30, 20]
-        actions_choices = [2, 3, 4]
+        room_name = room_instance.name
+        source_pool_items = None
+        source_pool_weights = None
+        num_items_to_spawn = 0
 
-        if player.inventory.get_quantity("Charm Chroma") > 0:
-            charm_multiplier = 1.5
-            actions_weights = [30, 40, 30]
-            actions_choices = [3, 4, 5]
+        # gére les salles spéciales avec nombre d'objets garanti
+        if room_name == "Closet":
+            num_items_to_spawn = 2
+            source_pool_items = self.room_actions
+            source_pool_weights = self.action_weights.copy()
+        elif room_name == "Walkin_Closet":
+            num_items_to_spawn = 4
+            source_pool_items = self.room_actions
+            source_pool_weights = self.action_weights.copy()
+        elif room_name == "Attic":
+            num_items_to_spawn = 8
+            source_pool_items = self.attic_loot_items    # Utilise le pool spécial
+            source_pool_weights = self.attic_loot_weights.copy()
+        else:
+            # gére les salles normales
+            base_spawn_chance = self.item_spawn_chance
+            type_multiplier = self.item_spawn_multipliers.get(room_instance.room_type, 1.0)
+            
+            charm_multiplier = 1.0
+            actions_weights = [50, 30, 20]
+            actions_choices = [2, 3, 4]
 
-        final_spawn_chance = base_spawn_chance * type_multiplier * charm_multiplier # calcule de la chance finale
-        final_spawn_chance = min(final_spawn_chance, 1.0) # on s'assure que la chance ne dépasse pas 100%
-        
-        if random.random() < final_spawn_chance:
+            if player.inventory.get_quantity("Charm Chroma") > 0: #
+                charm_multiplier = 1.5
+                actions_weights = [30, 40, 30]
+                actions_choices = [3, 4, 5]
+
+            final_spawn_chance = base_spawn_chance * type_multiplier * charm_multiplier
+            final_spawn_chance = min(final_spawn_chance, 1.0)
+            
+            if random.random() >= final_spawn_chance:
+                return # pas d'objets pour cette salle
             
             num_items_to_spawn = random.choices(actions_choices, weights=actions_weights, k=1)[0]
+            source_pool_items = self.room_actions
+            source_pool_weights = self.action_weights.copy()
 
-            # On récupère les poids de base
-            current_action_weights = self.action_weights.copy()
-
-            # On vérifie si le joueur a le détecteur de métal
-            if player.inventory.get_quantity("Metal Detector") > 0:
-
-                metal_detector_multiplier = 2.0
-                # On cherche l'index de "Key" pour modifier son poids
-                key_index = self.room_actions.index(room_Key)
+        # appliquer les bonus détecteur de Métal
+        current_action_weights = source_pool_weights
+        if player.inventory.get_quantity("Metal Detector") > 0:
+            metal_detector_multiplier = 2.0
+            # on utilise try/except au cas où le pool ne contiendrait pas ces items
+            try:
+                key_index = source_pool_items.index(room_Key)
                 current_action_weights[key_index] *= metal_detector_multiplier
-                # On cherche l'index de "Coin" pour modifier son poids
-                coin_index = self.room_actions.index(room_Coin)
+            except ValueError:
+                pass # le pool ne contient pas de clé
+            try:
+                coin_index = source_pool_items.index(room_Coin)
                 current_action_weights[coin_index] *= metal_detector_multiplier
+            except ValueError:
+                pass # le pool ne contient pas de pièce
 
-            # Crée un nouvel inventaire de salle vide
-            new_room_inventory = Room_Inventory()
-
-            # Tire N actions aléatoires depuis notre pool d'objets
-            chosen_actions = random.choices(
-                self.room_actions,
-                weights=current_action_weights, 
-                k=num_items_to_spawn
-            )
-
-            # Ajoute ces actions à l'inventaire de la salle
-            for action in chosen_actions:
-                
-                new_action_copy = copy.deepcopy(action)
-                # Si l'action est "Nothing", on ne l'ajoute tout simplement pas
-                # à la liste des actions de la salle.
-                if new_action_copy.name == "Nothing":
-                    continue
-                # Si l'action est un coffre, on génère son inventaire
-                if new_action_copy.name == "Chest":
-                    # On génère un inventaire de butin aléatoire
-                    loot_inv = self.generate_random_loot_inventory(player, "Chest")
-                    # On assigne cet inventaire à l'attribut item du coffre
-                    new_action_copy.item = loot_inv
-                elif new_action_copy.name == "Hole":
-                    # On génère un inventaire de butin aléatoire pour le trou
-                    loot_inv = self.generate_random_loot_inventory(player, "Hole")
-                    # On assigne cet inventaire à l'attribut item du trou
-                    new_action_copy.item = loot_inv
-                elif new_action_copy.name == "Locker":
-                    # On génère un inventaire de butin aléatoire pour le casier
-                    loot_inv = self.generate_random_loot_inventory(player, "Locker")
-                    # On assigne cet inventaire à l'attribut item du casier
-                    new_action_copy.item = loot_inv
-
-                new_room_inventory.addInventory(new_action_copy)
+        #créer l'inventaire et générer le butin
+        new_room_inventory = Room_Inventory()
+        chosen_actions = random.choices(
+            source_pool_items,
+            weights=current_action_weights, 
+            k=num_items_to_spawn
+        )
         
-        # Assigne ce nouvel inventaire à la salle
-            room_instance.inventories = new_room_inventory
+        for action in chosen_actions:
+            
+            new_action_copy = copy.deepcopy(action)
+            if new_action_copy.name == "Nothing":
+                continue
+            if new_action_copy.name == "Chest":
+                loot_inv = self.generate_random_loot_inventory(player, "Chest")
+                new_action_copy.item = loot_inv
+            elif new_action_copy.name == "Hole":
+                loot_inv = self.generate_random_loot_inventory(player, "Hole")
+                new_action_copy.item = loot_inv
+            elif new_action_copy.name == "Locker":
+                loot_inv = self.generate_random_loot_inventory(player, "Locker")
+                new_action_copy.item = loot_inv
+
+            new_room_inventory.addInventory(new_action_copy)
+    
+        room_instance.inventories = new_room_inventory
 
     def generate_random_loot_inventory(self, player, type_of_contenent):
         """
