@@ -41,7 +41,10 @@ class Player:
         elif condition.name in inventory:
             result = self.use(condition, test=test)
             if result == True and (not isinstance(item,Inventory)):
-                item.use(self, item.quantity)
+                if item.name in inventory:
+                    inventory[item.name].add(item.quantity) 
+                else:
+                    item.use(self, item.quantity)
             return result
         else:
             return False

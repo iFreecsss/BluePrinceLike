@@ -792,7 +792,7 @@ class West_Wing_Hall(RoomObject):
 
 #SHOPS
 class Kitchen(RoomObject):
-    rarity = 'debug'
+    rarity = 'common'
     cost = 0
     room_type = 'Shop'
     def __init__(self):
@@ -851,3 +851,40 @@ class Kitchen(RoomObject):
                 room_number = self.return_number_room_type(game_logic, 'Red Room')
                 item.item.quantity = room_number
                 item.set_message()
+
+
+
+
+class Commissary(RoomObject):
+    rarity = 'debug'
+    cost = 0
+    room_type = 'Shop'
+    def __init__(self):
+        super().__init__("Commissary", "Images/Shops/Commissary.png", base_exits=[1,2])
+
+    def on_draft(self, game_logic):
+        """
+        Set l'inventaire de la salle pour gérer l'achat de nourriture.
+        """
+
+        commissary_Diamond = RoomTypeObject("Diamond", player_Diamond.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item")
+        commissary_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0 and restored _4 _3!","Couldn't buy item")
+        commissary_Shovel = RoomTypeObject("Shovel", player_shovel.return_item_with_amount(1),player_Coin.return_item_with_amount(6), "Buy _0", "You bought the _0","Couldn't buy item")
+        commissary_hammer = RoomTypeObject("Hammer", player_hammer.return_item_with_amount(1),player_Coin.return_item_with_amount(8), "Buy _0", "You bought the _0","Couldn't buy item")
+        commissary_MetalDetector = RoomTypeObject("Metal Detector", player_metal_detector.return_item_with_amount(1),player_Coin.return_item_with_amount(10), "Buy _0", "You bought the _0","Couldn't buy item")
+        commissary_diamond_set = RoomTypeObject("Set of Diamonds", player_Diamond.return_item_with_amount(random.randint(3,4)),player_Coin.return_item_with_amount(10), "Buy _0", "You got _1 diamonds","Couldn't buy item")
+        commissary_Key = RoomTypeObject("Key", player_Key.return_item_with_amount(1),player_Coin.return_item_with_amount(10), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item")
+
+        room_item_pool = [commissary_Diamond, commissary_Banana,commissary_Shovel,commissary_hammer,commissary_MetalDetector,commissary_diamond_set,commissary_Key]
+
+
+        room_Menu = Room_Inventory()
+
+        for i in range(0,4):
+            index = random.randint(0,len(room_item_pool)-1)
+            room_Menu.addInventory(room_item_pool[index])
+            room_item_pool.pop(index)
+
+
+        self.inventories.inventory = room_Menu.inventory
+        game_logic.warning_message = "Come and eat for a reasonable price!"

@@ -38,7 +38,7 @@ class RandomManager:
             Furnace, Maids_Chamber, Veranda, The_Pool, Terrace,
             Boudoir, Guest_Bedroom, Her_Ladyships_Chamber, Nursery,
             Rotunda, Secret_Garden, Secret_Passage, Servants_Quarters,
-            Corridor, East_Wing_Hall, Hallway, West_Wing_Hall
+            Corridor, East_Wing_Hall, Hallway, West_Wing_Hall, Commissary
         ]
         
 
