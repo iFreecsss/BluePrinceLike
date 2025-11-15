@@ -1,5 +1,6 @@
 from item import *
 import numpy as np
+from inventory import RoomObject as RoomTypeObject
 from inventory import *
 import random
 import copy
@@ -393,14 +394,14 @@ class Her_Ladyships_Chamber(RoomObject):
         game_logic.random_manager.next_boudoir_bonus = True
         game_logic.random_manager.next_closet_bonus = True
         game_logic.warning_message = "Her Ladyship is pleased. \nBonuses await in the Boudoir and Closet."
-
+"""
 class Kitchen(RoomObject):
     rarity = 'common'
     cost = 0
     room_type = 'Shop'
     def __init__(self):
         super().__init__("Kitchen", "Images/Shops/Kitchen.png", base_exits=[1,2])
-
+"""
 class Locker_Room(RoomObject):
     rarity = 'rare'
     cost = 1
@@ -786,3 +787,53 @@ class West_Wing_Hall(RoomObject):
     placement_constraints = 'WEST'
     def __init__(self):
         super().__init__("West_Wing_Hall", "Images/Hallways/West_Wing_Hall.png", base_exits=[1,2,3])
+
+
+
+#SHOPS
+class Kitchen(RoomObject):
+    rarity = 'debug'
+    cost = 0
+    room_type = 'Shop'
+    def __init__(self):
+        super().__init__("Kitchen", "Images/Shops/Kitchen.png", base_exits=[1,2])
+
+    def return_number_room_type(self, game_logic, room_type):
+        rooms = []
+        current_map = game_logic.map.get_current_mapping()
+        
+        for room in np.nditer(current_map, flags=['refs_ok']):
+            room_obj = room.item()
+            if room_obj is not None:
+                if room_obj.room_type == room_type:
+                    rooms.append(room_obj)
+        
+        rooms.append(self)    # Patio est aussi dedans
+        
+        return len(rooms) # 1 gemme par Green Room
+
+    def on_draft(self, game_logic):
+        """
+        Set l'inventaire de la salle pour gérer l'achat de nourriture.
+        """
+        room_Menu = Room_Inventory()
+
+        kitchen_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(2), "Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
+        kitchen_ClubSandwich = RoomTypeObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+        kitchen_ChefSalad = RoomTypeObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+        kitchen_TomatoSoup = RoomTypeObject("Tomato Soup",player_TomatoSoup.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+
+        room_Menu.addInventory(kitchen_Banana)
+        room_Menu.addInventory(kitchen_ClubSandwich)
+
+
+        room_number = self.return_number_room_type(game_logic, 'Green Room')
+        kitchen_ChefSalad.item.quantity = room_number 
+        room_Menu.addInventory(kitchen_ChefSalad)
+
+        room_number = self.return_number_room_type(game_logic, 'Red Room')
+        kitchen_TomatoSoup.item.quantity = room_number 
+        room_Menu.addInventory(kitchen_TomatoSoup)
+
+        self.inventories.inventory = room_Menu.inventory
+        game_logic.warning_message = "Come and eat for a reasonable price!"

@@ -1,5 +1,5 @@
 from item import *
-
+import re
 
 class Inventory:
     """
@@ -54,6 +54,47 @@ class RoomObject():
         self.action_success = action_sucess
         self.action_failure = action_failure
         self.confirmation = confirmation
+        self.set_message()
+    
+    def string_to_message(self, message, replacements):
+        """
+        Dans le message donnée, remplace _0, _1 ect par les élements trouvé à l'index indiqué dans la liste remplacements.
+        Ex replacement = ["Apples","2"]
+        message = "You took _1 _0"
+        Devient "You took 2 Apples"
+        """
+        if not replacements:
+            return message
+
+        pattern = re.compile(r"_(\d+)")
+
+        def replacer(match):
+            idx = int(match.group(1))
+            if 0 <= idx < len(replacements):
+                return str(replacements[idx])   # ensure we return a string
+            return match.group(0)  # leave the placeholder unchanged if out of range
+
+        return pattern.sub(replacer, message)
+    
+    def set_message(self):
+        replacements = []
+        if self.item is None:
+            replacements = [self.name]
+        if isinstance(self.item,Inventory):
+            replacements = [self.name]
+        if isinstance(self.item,ConsumableItem):
+            replacements= [self.item.name,self.item.quantity]
+        if isinstance(self.item,NonConsumableItem):
+            replacements = [self.item.name]
+        if isinstance(self.item,RegenerativeItem):
+            replacements = [self.item.name, self.item.quantity, self.item.regenerate.name, self.item.regenerate.quantity]
+
+        self.action_message = self.string_to_message(self.action_message,replacements)
+        self.action_success = self.string_to_message(self.action_success,replacements)
+        self.action_failure = self.string_to_message(self.action_failure,replacements)
+        
+
+
     """
     @property
     def name(self):
@@ -128,7 +169,7 @@ class Room_Inventory():
 
                     cost_item_name = item_to_act_upon.activation_condition.name
                     cost_amount = item_to_act_upon.activation_condition.quantity
-                    return ("CONFIRM", f"Do you want to opne this {item_to_act_upon.name} for {cost_amount} {cost_item_name} ?")
+                    return ("CONFIRM", f"Do you want to open this {item_to_act_upon.name} for {cost_amount} {cost_item_name} ?")
                 else:
                     # Le joueur ne peut pas de toute façon donc on affiche l'échec
                     return item_to_act_upon.action_failure
@@ -173,25 +214,44 @@ class Room_Inventory():
         
 
 
+"""
+HOW TO SET MESSAGES:
+Each item type has got referencible elements to create a message.
+For example image we want to write : "You picked up Apple x 5!"
+We first write the basic message
+"You picked up _0 x _1"
+_0 and _1 are indentifiers relating to the items parameters. Each item type has got different accessibility parameters
+Example:
+Consummable Items [name, quantity]
+Nonconsummable Items [name]
+Regenerative Items [name, quantity, item to regenerate name, item to regenerate quantity]
+Inventory Type Item [name]
+
+The index of the element in each list represents the parameter.
+"""
 #Room Item - Name, Item to collect/interact with, Activation Condition (None if No item needed to interact),"Action Msg", "Action Sucess", "Action Failure"
 
-room_Apple = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Take Apple", "You took the apples!","Couldn't take item")
-room_Banana = RoomObject("Banan", player_Banana.return_item_with_amount(1),None, "Take Banana", "You took the bananas", "Couldn't take item")
-room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take Dice", "You took the dices!", "Couldn't take item")
-room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take Key", "You took the keys!", "Couldn't take item")
-room_Shovel = RoomObject("Shovel", player_shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
-room_Diamond = RoomObject("Diamond", player_Diamond.return_item_with_amount(1), None, "Take Diamond", "You took a diamond!", "Couldn't take item")
-room_Coin = RoomObject("Coin", player_Coin.return_item_with_amount(1), None, "Take Coin", "You took a coin!", "Couldn't take item")
 
+room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+room_Diamond = RoomObject("Diamond", player_Diamond.return_item_with_amount(1), None, "Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+room_Coin = RoomObject("Coin", player_Coin.return_item_with_amount(1), None, "Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+
+room_Apple = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
+room_Banana = RoomObject("Banana", player_Banana.return_item_with_amount(1),None, "Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
+
+room_ClubSandwich = RoomObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+room_ChefSalad = RoomObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+room_TomatoSoup = RoomObject("Tomato Soup",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
 # Je met none pour ensuite gérer le remplissage à partir de random manager
-room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open Chest","You opened the chest!", "You do not have a Key:", confirmation=True)
-room_Hole = RoomObject("Hole", None, player_shovel, "Dig Hole","You dug the hole out!", "You do not have a shovel:")
-room_locker = RoomObject("Locker", None, player_Key.return_item_with_amount(1), "Open Locker","You opened the locker!", "You do not have a Key:", confirmation=True)
-room_hammer = RoomObject("Hammer", player_hammer, None, "Take Hammer", "You took the Hammer!", "Couldn't take item")
-room_charm_chroma = RoomObject("Charm Chroma", player_charm_chroma, None, "Take Charm", "You took the Charm!", "Couldn't take item")
-room_Shovel = RoomObject("Shovel", player_shovel, None, "Take Shovel", "You took the Shovel", "Couldn't take item")
-room_metal_detector = RoomObject("Metal Detector", player_metal_detector, None, "Take Metal Detector", "You took the Metal Detector", "Couldn't take item")
-room_lock_picking_kit = RoomObject("Lock Picking Kit", player_lock_picking_kit, None, "Take Lock Picking Kit", "You took the Lock Picking Kit", "Couldn't take item")
+room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)
+room_Hole = RoomObject("Hole", None, player_shovel, "Dig _0","You dug the _0 out!", "You do not have a shovel:")
+room_locker = RoomObject("Locker", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)
+room_hammer = RoomObject("Hammer", player_hammer, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_charm_chroma = RoomObject("Charm Chroma", player_charm_chroma, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_Shovel = RoomObject("Shovel", player_shovel, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_metal_detector = RoomObject("Metal Detector", player_metal_detector, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_lock_picking_kit = RoomObject("Lock Picking Kit", player_lock_picking_kit, None, "Take _0", "You picked up the _0", "Couldn't take _0")
 
 
 items = [room_Apple,room_Banana,room_Dice,room_Key, room_Diamond, room_Chest, room_Hole, room_Shovel, room_Coin, room_charm_chroma, room_metal_detector, room_hammer, room_lock_picking_kit]

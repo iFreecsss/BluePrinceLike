@@ -6,6 +6,7 @@ from player import *
 import copy
 # Définition des poids pour les raretés
 RARITY_WEIGHTS = {
+    'debug' : 100,
     'common': 10,
     'uncommon': 5,
     'rare': 2
@@ -392,7 +393,10 @@ class RandomManager:
                 new_room_inventory.addInventory(new_action_copy)
         
         # Assigne ce nouvel inventaire à la salle
-            room_instance.inventories = new_room_inventory
+            if len(room_instance.inventories.inventory) != 0: #Si la chambre a déjà un inventaire, on skip.
+                pass
+            else:
+                room_instance.inventories = new_room_inventory
 
     def generate_random_loot_inventory(self, player, type_of_contenent):
         """
