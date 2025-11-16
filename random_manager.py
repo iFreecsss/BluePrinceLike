@@ -25,6 +25,70 @@ LOCK_PROB = {
 }
 
 class RandomManager:
+    '''
+    Gère tous les aspects aléatoires du jeu.
+    
+    Cette classe est responsable du tirage des salles (en respectant la rareté, 
+    les contraintes de placement et les modificateurs), de l'assignation 
+    des verrous aux portes (en fonction de la profondeur), et de la 
+    génération du butin et des actions dans les salles (y compris le contenu 
+    des coffres et des trous).
+
+    Attributes
+    ----------
+    full_room_deck : list
+        Liste complète de toutes les *classes* de salles disponibles dans le jeu.
+    current_room_deck : list
+        Pioche actuelle des salles. C'est une copie de `full_room_deck` qui 
+        se vide à mesure que les salles sont placées (sauf si `allow_duplicates` est `True`).
+    allow_duplicates : bool
+        Si `True` (activé par "Chamber of Mirrors"), la pioche `current_room_deck` 
+        n'est pas utilisée et les tirages se font depuis `full_room_deck`.
+    hallways_are_unlocked : bool
+        Si `True` (activé par "Foyer"), toutes les salles de type 'Hallway' 
+        sont générées sans verrous.
+    nursery_bonus_active : bool
+        Flag pour le bonus de la "Nursery" (+5 Pas pour les futures "Bedroom").
+    next_boudoir_bonus : bool
+        Flag pour le bonus de "Her Ladyship's Chamber" sur le prochain "Boudoir".
+    next_closet_bonus : bool
+        Flag pour le bonus de "Her Ladyship's Chamber" sur le prochain "Closet".
+    item_spawn_chance : float
+        Chance de base (0.0 à 1.0) qu'une salle normale contienne des objets.
+    type_weight_multipliers : dict
+        Dictionnaire mappant `room_type` (str) à un multiplicateur (float).
+        Modifie le poids de rareté lors du *tirage* d'une salle 
+        (ex: `{'Red Room': 5.0}`).
+    item_spawn_multipliers : dict
+        Dictionnaire mappant `room_type` (str) à un multiplicateur (float).
+        Modifie la *chance d'apparition d'objets* dans une salle 
+        (ex: `{'Green Room': 2.0}`).
+    room_action_pool : list
+        Table de butin principale pour les objets/actions trouvés dans les salles.
+        Format : [(RoomObject, poids), ...].
+    room_actions : list
+        Liste des `RoomObject` (actions) extraite de `room_action_pool`.
+    action_weights : list
+        Liste des poids (int) extraite de `room_action_pool`.
+    chest_loot_pool : list
+        Table de butin pour le contenu des "Chest" (Coffres).
+    chest_loot_items : list
+        Liste des `RoomObject` (items) extraite de `chest_loot_pool`.
+    chest_loot_weights : list
+        Liste des poids (int) extraite de `chest_loot_pool`.
+    hole_loot_pool : list
+        Table de butin pour le contenu des "Hole" (Trous).
+    hole_loot_items : list
+        Liste des `RoomObject` (items) extraite de `hole_loot_pool`.
+    hole_loot_weights : list
+        Liste des poids (int) extraite de `hole_loot_pool`.
+    attic_loot_pool : list
+        Table de butin spéciale pour la salle "Attic".
+    attic_loot_items : list
+        Liste des `RoomObject` (items) extraite de `attic_loot_pool`.
+    attic_loot_weights : list
+        Liste des poids (int) extraite de `attic_loot_pool`.
+    '''
     
     def __init__(self):
         # doit contenir les classes des salles et non les instances
@@ -146,10 +210,31 @@ class RandomManager:
         self.attic_loot_weights = [item[1] for item in self.attic_loot_pool]
 
     def is_room_placable(self, RoomClass, current_map, position, direction_of_entry):
-        """
-        Vérifie si une *Classe* de pièce peut être placée.
-        Teste les 4 rotations pour trouver au moins une orientation valide.
-        """
+        '''
+        Vérifie si une Classe de salle peut être légalement placée à une position.
+        
+        Teste les 4 rotations possibles pour la salle. Pour être plaçable, 
+        au moins une rotation doit permettre l'entrée par `direction_of_entry` 
+        ET être compatible avec les voisins (`current_map.is_placement_valid`).
+        Vérifie également les contraintes de placement (ex: 'WEST', 'INDOOR').
+
+        Parameters
+        ----------
+        RoomClass : class
+            La *classe* de la salle à tester (ex: `Attic`), pas une instance.
+        current_map : Map
+            L'instance `Map` actuelle du jeu.
+        position : tuple
+            Tuple (x, y) de la case de placement visée.
+        direction_of_entry : int
+            Entier (0-3) de la direction par laquelle le joueur doit entrer 
+            dans la nouvelle salle.
+
+        Returns
+        -------
+        bool
+            `True` si au moins une des 4 rotations est valide, `False` sinon.
+        '''
         # Vérification des contraintes de placement
         x, y = position
         constraints = RoomClass.placement_constraints
@@ -181,11 +266,30 @@ class RandomManager:
         return False # Aucune des 4 rotations n'est valide
 
     def draw_placable_rooms(self, current_map, position, direction_of_entry):
-        """
-        Tire 'count' salles (par défaut 3) qui sont *garanties* d'être plaçables
-        à la 'position' donnée, en tenant compte de la 'direction_of_entry'.
-        Prend en compte la rareté.
-        """
+        '''
+        Tire 'count' salles (par défaut 3) salles garanties d'être plaçables et 
+        les retourne comme instances.
+        
+        Filtre la pioche (`current_room_deck` ou `full_room_deck`) pour ne 
+        garder que les salles plaçables (via `is_room_placable`).
+        Applique les poids de rareté et les `type_weight_multipliers`.
+        Garantit qu'au moins une salle gratuite (coût 0) est proposée si possible.
+        Crée les 3 instances et leur assigne des verrous (via `assign_locks_to_room`).
+
+        Parameters
+        ----------
+        current_map : Map
+            L'instance `Map` actuelle du jeu.
+        position : tuple
+            Tuple (x, y) de la case de placement visée.
+        direction_of_entry : int
+            Entier (0-3) de la direction par laquelle le joueur doit entrer.
+
+        Returns
+        -------
+        list
+            Une liste de 3 *instances* `RoomObject` prêtes à être proposées.
+        '''
         
         # On choisit la liste source en fonction de l'effet
         if self.allow_duplicates:
@@ -278,10 +382,24 @@ class RandomManager:
         return chosen_instances
 
     def calculate_lock_level(self, y_coordinate):
-        """
-        Calcule le niveau de blocage (0, 1, ou 2)
-        basé sur la ligne (y) de la carte.
-        """
+        '''
+        Calcule un niveau de verrouillage (0, 1, ou 2) basé sur la profondeur.
+        
+        Utilise la table `LOCK_PROB` pour déterminer la probabilité 
+        d'un verrou de niveau 1 ou 2 en fonction de la coordonnée y.
+        La ligne 8 (départ) est toujours 0, la ligne 0 (fin) est toujours 2.
+
+        Parameters
+        ----------
+        y_coordinate : int
+            La coordonnée y (ligne) de la salle.
+
+        Returns
+        -------
+        int
+            Le niveau de verrouillage (0, 1, ou 2).
+        '''
+        
         # 1ère ligne -> niveau 0
         if y_coordinate == 8:
             return 0
@@ -303,9 +421,22 @@ class RandomManager:
             return 0 # Ouvert
         
     def assign_locks_to_room(self, room_instance, y_coordinate):
-        """
-        Applique les niveaux de blocage à toutes les sorties de base d'une instance de salle.
-        """
+        '''
+        Applique les niveaux de verrouillage calculés à une instance de salle.
+        
+        Pour chaque sortie de base (`base_exits`) de la salle, 
+        appelle `calculate_lock_level` et applique le résultat.
+        Gère les exceptions (ex: "Corridor" toujours ouvert, ou 
+        l'effet `hallways_are_unlocked`).
+
+        Parameters
+        ----------
+        room_instance : RoomObject
+            L'instance de salle qui vient d'être créée (avant d'être proposée).
+        y_coordinate : int
+            La coordonnée y où la salle sera placée, utilisée pour 
+            `calculate_lock_level`.
+        '''
         for base_direction in room_instance.base_exits:
             lock_level = self.calculate_lock_level(y_coordinate)
             
@@ -320,10 +451,18 @@ class RandomManager:
             room_instance.set_exit_lock(base_direction, lock_level)
     
     def remove_room_from_deck(self, room_class_to_remove):
-        """
-        Retire une pièce de la pioche actuelle (current_room_deck), 
-        sauf si l'effet de la Chamber of Mirrors (allow_duplicates) est actif.
-        """
+        '''
+        Retire une classe de salle de la pioche `current_room_deck`.
+        
+        Ne fait rien si l'effet de la Chamber of Mirrors `self.allow_duplicates` 
+        est `True`.
+
+        Parameters
+        ----------
+        room_class_to_remove : class
+            La *classe* de la salle qui a été choisie et placée par le joueur.
+        '''
+        
         # Si l'effet est actif, on ne fait rien, la pièce reste.
         if self.allow_duplicates:
             return
@@ -333,11 +472,24 @@ class RandomManager:
             self.current_room_deck.remove(room_class_to_remove)
 
     def assign_inventories_to_room(self, room_instance: RoomObject, player):
-        """
-        Assigne un inventaire d'ACTIONS aléatoire à une salle.
-        Prend en compte les salles spéciales (Closet, Attic, etc.)
-        qui ont un nombre d'objets garanti.
-        """
+        '''
+        Assigne un inventaire d'actions/objets aléatoire à une salle.
+        
+        Gère les salles spéciales (`Attic`, `Closet`, etc.) qui ont un 
+        nombre d'objets garanti et/ou des tables de butin spéciales.
+        Pour les salles normales, la chance d'apparition et le nombre d'objets 
+        sont déterminés par `item_spawn_chance`, `item_spawn_multipliers` 
+        et les bonus du joueur (`Charm Chroma`, `Metal Detector`).
+        Si une action de type conteneur (ex: "Chest") est générée, 
+        appelle `generate_random_loot_inventory` pour la remplir.
+
+        Parameters
+        ----------
+        room_instance : RoomObject
+            L'instance de la salle qui vient d'être placée sur la carte.
+        player : Player
+            L'instance du joueur (pour vérifier les bonus d'objets).
+        '''
         
         room_name = room_instance.name
         source_pool_items = None
@@ -433,9 +585,28 @@ class RandomManager:
             room_instance.inventories = new_RoomInventory
 
     def generate_random_loot_inventory(self, player, type_of_contenent):
-        """
-        Crée et retourne un nouvel objet Inventory() avec ressources random (pour chest et casier)
-        """
+        '''
+        Crée un inventaire de butin (pour un coffre, un trou, ou un casier).
+        
+        Tire 2-3 objets de la table de butin appropriée (`chest_loot_pool` 
+        ou `hole_loot_pool`). Gère les objets non consommables (ne les donne 
+        pas si le joueur les a déjà) et assure qu'au moins un objet 
+        est généré (évite les conteneurs vides).
+
+        Parameters
+        ----------
+        player : Player
+            L'instance du joueur (pour éviter les doublons d'objets uniques).
+        type_of_contenent : str
+            "Chest", "Hole", ou "Locker". Détermine la table de butin 
+            et la chance d'être vide.
+
+        Returns
+        -------
+        Inventory
+            Un objet `Inventory` (de `inventory.py`, *pas* `RoomInventory`) 
+            contenant les objets de butin (`Item`).
+        '''
         loot_inventory = Inventory()
         
         # Le coffre contiendra entre 1 et 3 items
