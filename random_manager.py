@@ -37,7 +37,8 @@ class RandomManager:
             Furnace, Maids_Chamber, Veranda, The_Pool, Terrace,
             Boudoir, Guest_Bedroom, Her_Ladyships_Chamber, Nursery,
             Rotunda, Secret_Garden, Secret_Passage, Servants_Quarters,
-            Corridor, East_Wing_Hall, Hallway, West_Wing_Hall, Commissary
+            Corridor, East_Wing_Hall, Hallway, West_Wing_Hall, Commissary, 
+            Walkin_Closet
         ]
         
 
@@ -447,14 +448,6 @@ class RandomManager:
             if random.random() < empty_chance:
                 return loot_inventory
 
-        # J'AI DESACTIVE CAR DANS L'ENONCE DU PROF C'EST ECRIT "DANS LE MANOIR" 
-        # je pense que implicitement c'est "pas dans les coffres ou autres contenants"
-        # de la même façon, je ne met pas l'effet du détecteur de métal dans les contenants
-        # Si le joueur a le charme, il trouve plus d'objets
-        # if player.inventory.get_quantity("Charm Chroma") > 0:
-            # Le coffre/trou contiendra entre 2 et 5 items (à voir si c'est pas trop cheaté)
-            # num_items = random.randint(2, 5)
-        
         if type_of_contenent == "Hole":
             loot = self.hole_loot_items
             weights = self.hole_loot_weights

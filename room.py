@@ -24,7 +24,6 @@ class RoomObject:
         # NORD: 0; OUEST: 1; SUD: 2; EST: 3
         self.orientation = 0
         self.exit_locks = {}
-        self.items_on_floor = []
         self.inventories = Room_Inventory()
 
     def has_exits(self, direction):
@@ -93,19 +92,7 @@ class RoomObject:
         """
         for base_direction in self.base_exits:
             self.exit_locks[base_direction] = 0
-    
-    def add_item_to_floor(self, item):
-        """
-        Ajoute un objet au sol dans la salle.
-        """
-        self.items_on_floor.append(item)
 
-    def get_items_on_floor(self):
-        """
-        Renvoie la liste des objets au sol dans la salle.
-        """
-        return self.items_on_floor
-    
     def on_entry(self, game_logic):
         """
         Applique un effet spécial lorsque le joueur entre dans la pièce.

@@ -29,10 +29,6 @@ class Inventory:
                 # On ajoute l'objet unique seulement s'il n'est pas déjà là
                 self.inventory[item_to_add.name] = item_to_add
 
-    def add_Inventory(self, other):
-        for item in other.get_all_items():
-            self.add_item(item)
-
     def get_quantity(self, item_name):
         """Retourne la quantité d'un consommable (0 si non possédé)"""
         if item_name in self.inventory:
@@ -121,9 +117,6 @@ class Room_Inventory():
         result = player.check_Item(room_object.activation_condition, room_object.item, test=test)
         return result
     
-    def set_inventory(self, inventory):
-        self.inventory = inventory
-
     def return_inventory_copy(self):
         inventory = self
         return inventory

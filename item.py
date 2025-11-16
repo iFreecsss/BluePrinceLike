@@ -102,7 +102,6 @@ player_lock_picking_kit = NonConsumableItem("Lock Picking Kit", "Images/Icons/lo
 player_Apple = RegenerativeItem("Apple", "Images/Icons/apple_icon.png", 1, player_Footsteps, 2, "A healthy snack. Restores +2 Footsteps immediately.")
 player_Banana = RegenerativeItem("Banana","Images/Icons/banana_icon.png", 1, player_Footsteps, 3, "Rich in energy. Restores +3 Footsteps immediately.")
 player_ClubSandwich = RegenerativeItem("Club Sandwich", None, 1, player_Footsteps, 15, "A classic. Restores +15 Footsteps immediately.")
-player_BaconEgg = RegenerativeItem("Bacon & Eggs",None, 1, player_Footsteps, 10, "My favorite! Restores +10 Footsteps immediately.")
 player_ChefSalad = RegenerativeItem("Chef Salad",None, 1, player_Footsteps, 5, "Healthy for the whole family. Restores +5 Footsteps per Green Room in the House.")
 player_TomatoSoup = RegenerativeItem("Tomato Soup",None, 1, player_Footsteps, 5, "An acquired taste. Restores +5 Footsteps per Red Room in the House.")
 

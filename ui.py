@@ -104,8 +104,6 @@ class UI:
         self.restart_sound = pygame.mixer.Sound('Sounds/Effects/restart.wav')
         self.restart_sound.set_volume(0.5)
 
-        
-
     def init_images(self):
         # icone restart
         self.restart_icon = pygame.image.load('Images/Icons/restart_icon.png').convert_alpha()        
@@ -130,7 +128,7 @@ class UI:
         self.item_icon_cache = {}
         self.room_image_cache = {}
 
-    def _wrap_text(self, text, font, max_width):
+    def wrap_text(self, text, font, max_width):
         """
         Coupe un texte en plusieurs lignes pour qu'il ne dépasse pas
         une largeur maximale (max_width).
@@ -467,7 +465,7 @@ class UI:
                 
                 max_width = self.main_view_rect.width - 40 # marge de 40px
                 
-                wrapped_lines = self._wrap_text(self.message_text, self.message_font, max_width)
+                wrapped_lines = self.wrap_text(self.message_text, self.message_font, max_width)
                 
                 line_surfaces = []
                 total_height = 0
@@ -497,32 +495,6 @@ class UI:
                     line_rect = surf.get_rect(centerx=bg_rect.centerx, top=current_y)
                     self.display_surface.blit(surf, line_rect)
                     current_y += surf.get_height() # passer à la ligne suivante
-                
-            else:
-                # le temps est écoulé on efface le message
-                self.message_text = None
-                self.message_timer = 0
-
-    def draw_action_message(self, message):
-        """
-        Affiche le message d'avertissement au centre de la carte s'il existe
-        et si son minuteur n'est pas écoulé.
-        """
-        if self.message_text:
-            current_time = pygame.time.get_ticks()
-            
-            if current_time - self.message_timer < self.MESSAGE_DURATION:
-                
-                text_surface = self.message_font.render(message, True, self.COLOR_MESSAGE_TEXT)
-                text_rect = text_surface.get_rect(center=self.draw_room_rect.center) # centré sur le menu d'action
-                
-                # fond semi-transparent
-                bg_rect = text_rect.inflate(20, 10) # 20px de marge H, 10px de marge V
-                bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
-                bg_surface.fill((0, 0, 0, 150)) # Noir semi-transparent
-                
-                self.display_surface.blit(bg_surface, bg_rect)
-                self.display_surface.blit(text_surface, text_rect)
                 
             else:
                 # le temps est écoulé on efface le message
@@ -1067,7 +1039,7 @@ class UI:
             self.draw_possible_actions()
             # Et on dessine la boîte de confirmation par-dessus
             self.draw_action_confirmation()
-            
+
         elif game_state == "DOOR_CONFIRMATION":
             # On ne dessine rien de spécial en fond,
             # juste la boîte de confirmation par-dessus la vue normale.

@@ -326,55 +326,6 @@ class Game:
                     self.handle_confirmation(i)
                     break # On ne traite qu'un input de confirmation à la fois
 
-
-
-        elif self.game_state == "COLLECTING_ITEMS":
-            #Pour le débug, on apparente le game_state COLLECTING_ITEMS à EXPLORING
-            self.game_state = "EXPLORING"
-            pass
-        
-            current_room = self.map.get_current_mapping()[self.player.position]
-            items_on_floor = current_room.get_items_on_floor()
-
-            # si on est dans cet état mais qu'il n'y a pas d'objets, on sort
-            if not items_on_floor:
-                self.game_state = "EXPLORING"
-                return
-
-            num_items = len(items_on_floor)
-
-            for i in inputs:
-                if i == "LEFT_ROOM":
-                    self.current_floor_item_index = (self.current_floor_item_index - 1) % num_items
-                elif i == "RIGHT_ROOM":
-                    self.current_floor_item_index = (self.current_floor_item_index + 1) % num_items
-                elif i == "ENTER":
-                    # Retirer l'objet de la liste de la salle
-                    # pop() le récupère ET le supprime de la liste en même temps
-                    item_to_collect = items_on_floor.pop(self.current_floor_item_index)
-                    
-                    # Appliquer son effet
-                    item_to_collect.collect(self)
-                    
-                    # Afficher le message de collecte
-                    item_name = item_to_collect.name
-                    if hasattr(item_to_collect, 'quantity') and item_to_collect.quantity > 1:
-                        item_name = f"{item_to_collect.quantity} {item_to_collect.name}(s)"
-                    elif item_to_collect.name in ["Apple", "Banana"]:
-                         item_name = f"1 {item_to_collect.name}"
-                    self.warning_message = f"You collected {item_name}!"
-                    
-                    # Vérifier s'il reste des objets
-                    if not items_on_floor:
-                        # S'il n'y en a plus retour à l'exploration
-                        self.game_state = "EXPLORING"
-                    else:
-                        # S'il en reste on doit ajuster l'index
-                        self.current_floor_item_index = min(self.current_floor_item_index, len(items_on_floor) - 1)
-                    
-                    # On arrête de traiter les inputs pour ce frame
-                    break
-
     def handle_reroll(self):
         """Tente de relancer le tirage des pièces en utilisant un dé"""
 
@@ -472,6 +423,7 @@ class Game:
                 
             self.pending_door_confirmation = None   
             self.action_index = 0
+
     def publish_data(self):
         """
         Donne toutes les données pertinnents pour l'affichage, a ajouter les nouvelles données ici.
