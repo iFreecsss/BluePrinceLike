@@ -40,7 +40,7 @@ class Inventory:
         return all_items
     
 
-class RoomObject():
+class RoomInventoryObject():
     def __init__(self, name, item, activation_condition, action_message, action_sucess, action_failure, confirmation=False):
         self.name = name
         self.item = item
@@ -96,7 +96,7 @@ class RoomInventory():
         self.inventory = [ ]
     
     def addInventory(self, inventory_Item):
-        if isinstance(inventory_Item, RoomObject):
+        if isinstance(inventory_Item, RoomInventoryObject):
             self.inventory.append(inventory_Item)
     
     def get_action_number(self):
@@ -108,11 +108,11 @@ class RoomInventory():
             messages.append(item.action_message)
         return messages
     
-    def checkInv_activation_condition(self, player, room_object : RoomObject, test=False):
+    def checkInv_activation_condition(self, player, room_object : RoomInventoryObject, test=False):
         result = player.check_condition(room_object.activation_condition)
         return result
 
-    def use_item(self,player, room_object : RoomObject, test=False):
+    def use_item(self,player, room_object : RoomInventoryObject, test=False):
         result = player.check_Item(room_object.activation_condition, room_object.item, test=test)
         return result
     
@@ -206,26 +206,26 @@ Inventory Type Item [name]
 The index of the element in each list represents the parameter.
 """
 #Room Item - Name, Item to collect/interact with, Activation Condition (None if No item needed to interact),"Action Msg", "Action Sucess", "Action Failure"
-room_Dice = RoomObject("Dice",player_Dice.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
-room_Key = RoomObject("Key",player_Key.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
-room_Diamond = RoomObject("Diamond", player_Diamond.return_item_with_amount(1), None, "Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
-room_Coin = RoomObject("Coin", player_Coin.return_item_with_amount(1), None, "Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+room_Dice = RoomInventoryObject("Dice",player_Dice.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+room_Key = RoomInventoryObject("Key",player_Key.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+room_Diamond = RoomInventoryObject("Diamond", player_Diamond.return_item_with_amount(1), None, "Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
+room_Coin = RoomInventoryObject("Coin", player_Coin.return_item_with_amount(1), None, "Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
 
-room_Apple = RoomObject("Apple",player_Apple.return_item_with_amount(1),None,"Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
-room_Banana = RoomObject("Banana", player_Banana.return_item_with_amount(1),None, "Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
+room_Apple = RoomInventoryObject("Apple",player_Apple.return_item_with_amount(1),None,"Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
+room_Banana = RoomInventoryObject("Banana", player_Banana.return_item_with_amount(1),None, "Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
 
-room_ClubSandwich = RoomObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
-room_ChefSalad = RoomObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
-room_TomatoSoup = RoomObject("Tomato Soup",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+room_ClubSandwich = RoomInventoryObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+room_ChefSalad = RoomInventoryObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+room_TomatoSoup = RoomInventoryObject("Tomato Soup",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
 
-room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)
-room_Hole = RoomObject("Hole", None, player_shovel, "Dig _0","You dug the _0 out!", "You do not have a shovel:")
-room_locker = RoomObject("Locker", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)
-room_hammer = RoomObject("Hammer", player_hammer, None, "Take _0", "You picked up the _0", "Couldn't take _0")
-room_charm_chroma = RoomObject("Charm Chroma", player_charm_chroma, None, "Take _0", "You picked up the _0", "Couldn't take _0")
-room_Shovel = RoomObject("Shovel", player_shovel, None, "Take _0", "You picked up the _0", "Couldn't take _0")
-room_metal_detector = RoomObject("Metal Detector", player_metal_detector, None, "Take _0", "You picked up the _0", "Couldn't take _0")
-room_lock_picking_kit = RoomObject("Lock Picking Kit", player_lock_picking_kit, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_Chest = RoomInventoryObject("Chest", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)
+room_Hole = RoomInventoryObject("Hole", None, player_shovel, "Dig _0","You dug the _0 out!", "You do not have a shovel:")
+room_locker = RoomInventoryObject("Locker", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)
+room_hammer = RoomInventoryObject("Hammer", player_hammer, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_charm_chroma = RoomInventoryObject("Charm Chroma", player_charm_chroma, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_Shovel = RoomInventoryObject("Shovel", player_shovel, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_metal_detector = RoomInventoryObject("Metal Detector", player_metal_detector, None, "Take _0", "You picked up the _0", "Couldn't take _0")
+room_lock_picking_kit = RoomInventoryObject("Lock Picking Kit", player_lock_picking_kit, None, "Take _0", "You picked up the _0", "Couldn't take _0")
 
 
 items = [room_Apple,room_Banana,room_Dice,room_Key, room_Diamond, room_Chest, room_Hole, room_Shovel, room_Coin, room_charm_chroma, room_metal_detector, room_hammer, room_lock_picking_kit]
