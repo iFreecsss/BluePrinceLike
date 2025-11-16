@@ -5,6 +5,58 @@ from random_manager import *
 from item import *
 
 class Game:
+    '''
+    La classe Game est le contrôleur principal du jeu. 
+    
+    Elle gère la logique centrale, l'état du jeu, et les interactions entre 
+    le joueur (`Player`), la carte (`Map`), les salles (`RoomObject`), 
+    les objets (`Item`) et le gestionnaire d'aléatoire (`RandomManager`).
+    Elle reçoit les entrées de l'UI (`handle_inputs`) et lui envoie 
+    les données à afficher (`publish_data`).
+
+    Attributes
+    ----------
+    player : Player
+        L'instance du joueur, contenant sa position, direction et son inventaire.
+    map : Map
+        L'instance de la carte, gérant la grille et les salles placées.
+    data : dict
+        Dictionnaire contenant toutes les informations nécessaires à l'UI pour l'affichage.
+    warning_message : str
+        Un message temporaire à afficher à l'utilisateur (ex: "Porte verrouillée").
+    random_manager : RandomManager
+        Instance gérant le tirage des salles et la génération d'objets.
+    game_state : str
+        L'état actuel du jeu (ex: 'EXPLORING', 'DRAWING_ROOM', 'SETTINGS').
+    _previous_game_state : str
+        Stocke l'état du jeu précédent avant d'entrer dans le menu 'SETTINGS'.
+    current_choice_index : int
+        Index (0-2) de la salle ou de l'option de confirmation sélectionnée.
+    room_choices : list
+        Liste des 3 instances de `RoomObject` proposées lors du tirage.
+    pending_placement_position : tuple
+        Coordonnées (x, y) où la prochaine salle choisie sera placée.
+    pending_entry_direction : int
+        Direction (0-3) par laquelle le joueur entrera dans la nouvelle salle.
+    pending_confirmation : dict
+        Stocke les informations pour une confirmation d'action (ex: ouvrir un coffre).
+    pending_door_confirmation : dict
+        Stocke les informations pour une confirmation d'ouverture de porte (clé).
+    action_index : int
+        Index de l'action sélectionnée dans la liste des actions de la salle actuelle.
+    possible_actions : int
+        Nombre total d'actions possibles dans la salle actuelle.
+    sound_to_play : str
+        Nom du son que l'UI doit jouer (ex: 'footsteps', 'new_room').
+    music_volume : float
+        Volume de la musique (0.0 à 1.0).
+    effects_volume : float
+        Volume des effets sonores (0.0 à 1.0).
+    is_music_muted : bool
+        Indique si la musique est coupée.
+    is_effects_muted : bool
+        Indique si les effets sonores sont coupés.
+    '''
 
     def __init__(self):
         self.player = Player()
@@ -60,11 +112,14 @@ class Game:
         self.is_effects_muted = False
 
     def player_orientation(self, input):
-        """
-        Appel de fonction pour appeler une fontion dans player, pas ouf,
-        peut être modifié de façon à ce que player ne soit qu'un contenaire et Game intégres les getters/setters pour ses valeurs,
-        mais a des fins de demo ça reste acceptable.
-        """
+        '''
+        Modifie la direction (orientation) vers laquelle le joueur fait face.
+
+        Parameters
+        ----------
+        input : str
+            La direction souhaitée ("UP", "LEFT", "DOWN", "RIGHT").
+        '''
         if input == "UP":
             self.player.face(0)
         elif input == "LEFT":
@@ -75,9 +130,23 @@ class Game:
             self.player.face(3)
     
     def player_movement(self,input):
-        """
-        Même cas que pour player orientation.
-        """
+        '''
+        Gère la logique de tentative de mouvement du joueur.
+        
+        Vérifie s'il y a une sortie dans la direction `self.player.direction`.
+        Vérifie le niveau de verrouillage, gère l'utilisation des kits de crochetage 
+        et des clés (déclenche `DOOR_CONFIRMATION`), ou bloque le joueur.
+        Si le mouvement est possible vers une case vide, passe en état `DRAWING_ROOM`.
+        Si le mouvement est possible vers une salle existante, déplace le joueur 
+        et déclenche `on_entry`. Consomme un `Footstep`.
+
+        Parameters
+        ----------
+        input : str
+            La touche d'action (ex: "SPACE") qui déclenche le mouvement.
+            (Note: Non utilisé pour déterminer la direction, qui est lue 
+            depuis `self.player.direction`).
+        '''
         direction = self.player.direction
         current_room_coords = self.player.position
         
@@ -190,9 +259,15 @@ class Game:
                 self.check_game_over()
 
     def handle_room_selection(self, input):
-        """
-        Gère les inputs de la phase de sélection.
-        """
+        '''
+        Gère la navigation, avec les inputs (gauche/droite/entrée) pendant la phase de 
+        sélection de salle (`DRAWING_ROOM`).
+
+        Parameters
+        ----------
+        input : str
+            L'entrée de l'utilisateur ("LEFT_ROOM", "RIGHT_ROOM", "ENTER").
+        '''
         # même rôle que player movement mais pour la sélection de salle permet d'alléger un peu handle_inputs
         if input == "LEFT_ROOM":
             self.current_choice_index = (self.current_choice_index - 1) % 3 # permet de boucler (appuyer 1 fois sur droite revient à appuyer 2 fois sur gauche)
@@ -202,6 +277,15 @@ class Game:
             self.select_room_choice(self.current_choice_index)
 
     def handle_action_index(self, given_input):
+        '''
+        Gère la navigation (haut/bas) dans la liste des actions 
+        disponibles dans une salle.
+
+        Parameters
+        ----------
+        given_input : str
+            L'entrée de l'utilisateur ("ARROW_UP", "ARROW_DOWN", "SPACE", "ENTER").
+        '''
         if given_input == "ARROW_UP":
             self.action_index = max(0,self.action_index-1)
         
@@ -216,6 +300,17 @@ class Game:
                 self.action_index = self.possible_actions - 1
 
     def handle_inputs(self, inputs):
+        '''
+        Routeur d'entrée principal. 
+        
+        Reçoit une liste d'entrées de l'UI et les distribue aux méthodes 
+        appropriées en fonction de `self.game_state`.
+
+        Parameters
+        ----------
+        inputs : list
+            Une liste de commandes (str ou tuples) provenant de l'UI.
+        '''
         self.sound_to_play = None
 
         if "TOGGLE_SETTINGS" in inputs:
@@ -327,7 +422,10 @@ class Game:
                     break # On ne traite qu'un input de confirmation à la fois
 
     def handle_reroll(self):
-        """Tente de relancer le tirage des pièces en utilisant un dé"""
+        '''
+        Tente d'utiliser un objet `Dice` pour relancer le tirage des 
+        trois salles proposées.
+        '''
 
         if self.player.use(player_Dice.return_item_with_amount(1)):
             self.warning_message = "You used 1 Dice to reroll room choices."
@@ -337,7 +435,15 @@ class Game:
             self.warning_message = "You don't have any Dice to reroll."
 
     def handle_confirmation(self, input):
-        """Gère les confirmations d'actions (ex: ouvrir un coffre)"""
+        '''
+        Gère la confirmation (Oui/Non) pour une action en attente 
+        (ex: ouvrir un coffre, acheter un objet).
+
+        Parameters
+        ----------
+        input : str
+            L'entrée de l'utilisateur ("LEFT_ROOM", "RIGHT_ROOM", "ENTER").
+        '''
         if input == "LEFT_ROOM":
             self.current_choice_index = 0 # oui
         elif input == "RIGHT_ROOM":
@@ -360,7 +466,15 @@ class Game:
             self.action_index = 0
 
     def handle_door_confirmation(self, input):
-        """Gère les confirmations d'ouverture de porte"""
+        '''
+        Gère la confirmation (Oui/Non) pour l'utilisation de clés sur 
+        une porte verrouillée.
+
+        Parameters
+        ----------
+        input : str
+            L'entrée de l'utilisateur ("LEFT_ROOM", "RIGHT_ROOM", "ENTER", "SPACE").
+        '''
         if input == "LEFT_ROOM":
             self.current_choice_index = 0 # oui
         elif input == "RIGHT_ROOM":
@@ -425,9 +539,15 @@ class Game:
             self.action_index = 0
 
     def publish_data(self):
-        """
-        Donne toutes les données pertinnents pour l'affichage, a ajouter les nouvelles données ici.
-        """
+        '''
+        Rassemble toutes les données nécessaires à l'UI dans `self.data` et le renvoie.
+        Réinitialise `warning_message` et `sound_to_play` après publication.
+
+        Returns
+        -------
+        dict
+            Dictionnaire complet de l'état du jeu pour l'affichage (`self.data`).
+        '''
         self.data['position'] = self.player.position
         self.data['direction'] = self.player.direction
         self.data['mapping'] = self.map.get_current_mapping()
@@ -457,6 +577,14 @@ class Game:
         return self.data
     
     def draw_new_rooms(self):
+            '''
+            Demande au `RandomManager` de tirer 3 salles plaçables.
+            
+            Utilise `pending_placement_position` et `pending_entry_direction` 
+            stockés pour obtenir des salles valides. Pré-calcule et applique 
+            la meilleure rotation pour chaque salle via `find_best_rotation`.
+            Stocke les résultats dans `self.room_choices`.
+            '''
             # on récupère la direction d'entrée mémorisée et on rappelle :
             # Calculer la direction par laquelle le joueur va entrer
             # (Si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce)
@@ -491,6 +619,19 @@ class Game:
             self.current_choice_index = 0
 
     def select_room_choice(self, choice_index):
+        '''
+        Valide le choix d'une salle lors du tirage.
+        
+        Vérifie si le joueur peut payer le coût en `Diamond`. 
+        Si oui, consomme les `Diamond` et un `Footstep`, applique l'effet 
+        `on_draft`, place la salle sur la `Map`, y déplace le `Player`, 
+        retire la salle de la pioche, et déclenche l'effet `on_entry`.
+
+        Parameters
+        ----------
+        choice_index : int
+            L'index (0-2) de la salle choisie dans `self.room_choices`.
+        '''
         
         chosen_room = self.room_choices[choice_index]
         placement_pos = self.pending_placement_position
@@ -542,12 +683,28 @@ class Game:
             # On ne change pas d'état, le joueur reste sur l'écran de choix
     
     def find_best_rotation(self, room, position, must_enter_direction):
-        """
-        Trouve la meilleure rotation pour une pièce.
-        Retourne l'entier de la rotation (0-3).
-        C est une copie de l'ancienne fonction select_room_choice 
-        mais elle retourne seulement la rotation.
-        """
+        '''
+        Calcule la meilleure orientation (0-3) pour une salle donnée.
+        
+        Teste les 4 rotations pour trouver celles qui sont valides 
+        (permettent l'entrée et sont compatibles avec les voisins).
+        Parmi les rotations valides, priorise celle offrant une sortie au Nord (0)
+        et évite celle offrant une sortie au Sud (2) si possible.
+
+        Parameters
+        ----------
+        room : RoomObject
+            L'instance de la salle à tester.
+        position : tuple
+            Les coordonnées (x, y) de placement.
+        must_enter_direction : int
+            La direction (0-3) par laquelle le joueur doit pouvoir entrer.
+
+        Returns
+        -------
+        int
+            L'orientation optimale (0-3).
+        '''
         valid_rotations = []
         
         # Ici on sait qu'au moins une rotation est valide mais mainteannt il s'agit de choisir la meilleure
@@ -589,9 +746,10 @@ class Game:
         return best_rotation
     
     def check_game_status(self):
-        """
-        Vérifie si le jeu est gagné ou perdu.
-        """
+        '''
+        Vérifie si le joueur a atteint la condition de victoire.
+        La victoire survient si le joueur atteint la position (2, 0) (AnteChamber).
+        '''
         VICTORY_POSITION = (2, 0)
         
         if self.player.position == VICTORY_POSITION:
@@ -600,12 +758,13 @@ class Game:
             return
         
     def check_game_over(self):
-        """
-        Vérifie si le joueur a perdu.
-        La défaite survient à 0 pas, SEULEMENT s'il n'y a plus
-        d'objets à ramasser
-        dans la salle actuelle.
-        """
+        '''
+        Vérifie si le joueur est en situation de 'Game Over'. 
+        
+        La défaite survient si le joueur a 0 `Footsteps` et qu'il ne peut 
+        plus effectuer d'action dans la salle actuelle (parce que la salle 
+        est vide, ou c'est une boutique où il ne peut rien acheter).
+        '''
         # si le jeu est déjà gagné ou perdu, on ne fait rien
         if self.game_state in ["VICTORY", "GAME_OVER"]:
             return
