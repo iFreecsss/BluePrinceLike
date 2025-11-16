@@ -8,7 +8,6 @@ class Inventory:
     """
     def __init__(self):
         self.inventory = {}
-    
 
     def add_item(self, item_to_add : Item):
         """
@@ -91,7 +90,7 @@ class RoomObject():
     
 room_items_dictionary = {}
 
-class Room_Inventory():
+class RoomInventory():
 
     def __init__(self):
         self.inventory = [ ]

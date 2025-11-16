@@ -615,7 +615,7 @@ class Game:
         if current_steps <= 0:
             # verification des objets dispo dans la salle du joueur
             current_room = self.map.get_current_mapping()[self.player.position]
-            room_inventory_list = current_room.inventories.inventory
+            RoomInventory_list = current_room.inventories.inventory
             
             is_stuck = False
             is_stuck = False
@@ -626,7 +626,7 @@ class Game:
                 can_afford_anything = False
                 
                 # On vérifie si le joueur peut acheter au moins un item
-                for item_for_sale in room_inventory_list:
+                for item_for_sale in RoomInventory_list:
                     cost_item = item_for_sale.activation_condition # Le coût est la activation_condition
                     
                     # On vérifie si l'item a un coût en pièces
@@ -642,7 +642,7 @@ class Game:
             # Logique pour toutes les autres salles
             else:
                 # Si l'inventaire de la salle est vide, le joueur est bloqué
-                if len(room_inventory_list) == 0:
+                if len(RoomInventory_list) == 0:
                     is_stuck = True
             
             if is_stuck:

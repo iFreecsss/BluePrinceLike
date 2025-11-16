@@ -20,6 +20,12 @@ class Item(ABC):
         Méthode abstraite pour utiliser l'objet => dépendra du type d'objet.
         """
         pass
+    @abstractmethod
+    def add(self, amount):
+        """
+        Méthode abstraite pour ajouter une certaine quantité à l'objet => dépendra du type d'objet.
+        """
+        pass
 
     def return_item_with_amount(self, quantity):
         """
@@ -51,9 +57,6 @@ class ConsumableItem(Item):
     
     def add(self, amount):
         self.quantity += amount
-
-    
-            
 
 class NonConsumableItem(Item):
     """

@@ -38,7 +38,7 @@ class RandomManager:
             Boudoir, Guest_Bedroom, Her_Ladyships_Chamber, Nursery,
             Rotunda, Secret_Garden, Secret_Passage, Servants_Quarters,
             Corridor, East_Wing_Hall, Hallway, West_Wing_Hall, Commissary, 
-            Walkin_Closet
+            Walkin_Closet, Cloister
         ]
         
 
@@ -402,7 +402,7 @@ class RandomManager:
                 pass # le pool ne contient pas de pièce
 
         #créer l'inventaire et générer le butin
-        new_room_inventory = Room_Inventory()
+        new_RoomInventory = RoomInventory()
         chosen_actions = random.choices(
             source_pool_items,
             weights=current_action_weights, 
@@ -424,14 +424,13 @@ class RandomManager:
                 loot_inv = self.generate_random_loot_inventory(player, "Locker")
                 new_action_copy.item = loot_inv
 
-            new_room_inventory.addInventory(new_action_copy)
+            new_RoomInventory.addInventory(new_action_copy)
         
         # Assigne ce nouvel inventaire à la salle
         if len(room_instance.inventories.inventory) != 0: #Si la chambre a déjà un inventaire, on skip.
             pass
         else:
-            room_instance.inventories = new_room_inventory
-
+            room_instance.inventories = new_RoomInventory
 
     def generate_random_loot_inventory(self, player, type_of_contenent):
         """

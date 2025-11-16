@@ -24,7 +24,7 @@ class RoomObject:
         # NORD: 0; OUEST: 1; SUD: 2; EST: 3
         self.orientation = 0
         self.exit_locks = {}
-        self.inventories = Room_Inventory()
+        self.inventories = RoomInventory()
 
     def has_exits(self, direction):
 
@@ -815,8 +815,6 @@ class West_Wing_Hall(RoomObject):
     def __init__(self):
         super().__init__("West_Wing_Hall", "Images/Hallways/West_Wing_Hall.png", base_exits=[1,2,3])
 
-
-
 #SHOPS
 class Kitchen(RoomObject):
     rarity = 'common'
@@ -843,7 +841,7 @@ class Kitchen(RoomObject):
         """
         Set l'inventaire de la salle pour gérer l'achat de nourriture.
         """
-        room_Menu = Room_Inventory()
+        room_Menu = RoomInventory()
 
         kitchen_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(2), "Buy _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item",confirmation=True)
         kitchen_ClubSandwich = RoomTypeObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item",confirmation=True)
@@ -879,9 +877,6 @@ class Kitchen(RoomObject):
                 item.item.quantity = room_number
                 item.set_message()
 
-
-
-
 class Commissary(RoomObject):
     rarity = 'uncommon'
     cost = 0
@@ -894,7 +889,6 @@ class Commissary(RoomObject):
         Set l'inventaire de la salle pour gérer l'achat de nourriture.
         """
 
-        commissary_Diamond = RoomTypeObject("Diamond", player_Diamond.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item",confirmation=True)
         commissary_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0 and restored _4 _3!","Couldn't buy item",confirmation=True)
         commissary_Shovel = RoomTypeObject("Shovel", player_shovel.return_item_with_amount(1),player_Coin.return_item_with_amount(6), "Buy _0", "You bought the _0","Couldn't buy item",confirmation=True)
         commissary_hammer = RoomTypeObject("Hammer", player_hammer.return_item_with_amount(1),player_Coin.return_item_with_amount(8), "Buy _0", "You bought the _0","Couldn't buy item",confirmation=True)
@@ -902,10 +896,10 @@ class Commissary(RoomObject):
         commissary_diamond_set = RoomTypeObject("Set of Diamonds", player_Diamond.return_item_with_amount(random.randint(3,4)),player_Coin.return_item_with_amount(10), "Buy _0", "You got _1 diamonds","Couldn't buy item",confirmation=True)
         commissary_Key = RoomTypeObject("Key", player_Key.return_item_with_amount(1),player_Coin.return_item_with_amount(10), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item",confirmation=True)
 
-        room_item_pool = [commissary_Diamond, commissary_Banana,commissary_Shovel,commissary_hammer,commissary_MetalDetector,commissary_diamond_set,commissary_Key]
+        room_item_pool = [commissary_Banana,commissary_Shovel,commissary_hammer,commissary_MetalDetector,commissary_diamond_set,commissary_Key]
 
 
-        room_Menu = Room_Inventory()
+        room_Menu = RoomInventory()
 
         for i in range(0,4):
             index = random.randint(0,len(room_item_pool)-1)
