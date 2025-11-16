@@ -93,33 +93,6 @@ class RoomObject():
         self.action_success = self.string_to_message(self.action_success,replacements)
         self.action_failure = self.string_to_message(self.action_failure,replacements)
     
-
-        
-
-
-    """
-    @property
-    def name(self):
-        return self.name
-    @property
-    def item(self):
-        return self.item
-    
-    @property
-    def activation_condition(self):
-        return self.activation_condition
-    @property
-    def action_message(self):
-        return self.action_message
-
-    @property
-    def action_success(self):
-        return self.action_success
-
-    @property
-    def action_failure(self):
-        return self.action_failure
-    """
 room_items_dictionary = {}
 
 class Room_Inventory():
@@ -175,7 +148,12 @@ class Room_Inventory():
 
                     cost_item_name = item_to_act_upon.activation_condition.name
                     cost_amount = item_to_act_upon.activation_condition.quantity
-                    return ("CONFIRM", f"Do you want to open this {item_to_act_upon.name} for {cost_amount} {cost_item_name} ?")
+
+                    if cost_item_name == "Coin":
+                        verb = "buy"
+                    else:
+                        verb = "open"
+                    return ("CONFIRM", f"Do you want to {verb} this {item_to_act_upon.name} for {cost_amount} {cost_item_name} ?")
                 else:
                     # Le joueur ne peut pas de toute façon donc on affiche l'échec
                     return item_to_act_upon.action_failure
@@ -247,7 +225,7 @@ room_Banana = RoomObject("Banana", player_Banana.return_item_with_amount(1),None
 room_ClubSandwich = RoomObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
 room_ChefSalad = RoomObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
 room_TomatoSoup = RoomObject("Tomato Soup",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
-# Je met none pour ensuite gérer le remplissage à partir de random manager
+
 room_Chest = RoomObject("Chest", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)
 room_Hole = RoomObject("Hole", None, player_shovel, "Dig _0","You dug the _0 out!", "You do not have a shovel:")
 room_locker = RoomObject("Locker", None, player_Key.return_item_with_amount(1), "Open _0","You opened the _0!", "You do not have a Key:", confirmation=True)

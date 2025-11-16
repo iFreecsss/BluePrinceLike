@@ -426,15 +426,8 @@ class Her_Ladyships_Chamber(RoomObject):
         # active les bonus pour la prochaine visite
         game_logic.random_manager.next_boudoir_bonus = True
         game_logic.random_manager.next_closet_bonus = True
-        game_logic.warning_message = "Her Ladyship is pleased. \nBonuses await in the Boudoir and Closet."
-"""
-class Kitchen(RoomObject):
-    rarity = 'common'
-    cost = 0
-    room_type = 'Shop'
-    def __init__(self):
-        super().__init__("Kitchen", "Images/Shops/Kitchen.png", base_exits=[1,2])
-"""
+        game_logic.warning_message = "Her Ladyship is pleased. Bonuses await in the Boudoir and Closet."
+
 class Locker_Room(RoomObject):
     rarity = 'rare'
     cost = 1
@@ -865,7 +858,7 @@ class Kitchen(RoomObject):
         """
         room_Menu = Room_Inventory()
 
-        kitchen_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(2), "Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item",confirmation=True)
+        kitchen_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(2), "Buy _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item",confirmation=True)
         kitchen_ClubSandwich = RoomTypeObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item",confirmation=True)
         kitchen_ChefSalad = RoomTypeObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item",confirmation=True)
         kitchen_TomatoSoup = RoomTypeObject("Tomato Soup",player_TomatoSoup.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item",confirmation=True)
@@ -903,7 +896,7 @@ class Kitchen(RoomObject):
 
 
 class Commissary(RoomObject):
-    rarity = 'debug'
+    rarity = 'uncommon'
     cost = 0
     room_type = 'Shop'
     def __init__(self):

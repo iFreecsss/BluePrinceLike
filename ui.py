@@ -101,6 +101,11 @@ class UI:
         self.victory_sound = pygame.mixer.Sound('Sounds/Effects/victory.wav')
         self.victory_sound.set_volume(0.5)
 
+        self.restart_sound = pygame.mixer.Sound('Sounds/Effects/restart.wav')
+        self.restart_sound.set_volume(0.5)
+
+        
+
     def init_images(self):
         # icone restart
         self.restart_icon = pygame.image.load('Images/Icons/restart_icon.png').convert_alpha()        
@@ -440,6 +445,7 @@ class UI:
         if self.rotate_sound: self.rotate_sound.set_volume(final_effects_vol)
         if self.game_over_sound: self.game_over_sound.set_volume(final_effects_vol)
         if self.victory_sound: self.victory_sound.set_volume(final_effects_vol)
+        if self.restart_sound: self.restart_sound.set_volume(final_effects_vol)
 
         # gestion des messages d'avertissement
         new_message = self.data.get('warning_message')
@@ -851,7 +857,8 @@ class UI:
         lock_level = pending_data.get("lock_level", 0)
         
         key_text = "key" if lock_level == 1 else "keys"
-        message = f"This door is locked.\n Do you want to use {lock_level} {key_text} to open it ?"
+        line1_text = "This door is locked."
+        line2_text = f"Do you want to use {lock_level} {key_text} to open it ?"
         # On réutilise current_choice_index (0=Oui, 1=Non)
         current_index = self.data.get('current_choice_index', 0) 
 
@@ -867,10 +874,15 @@ class UI:
         self.display_surface.blit(bg_surface, box_rect.topleft)
         pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, box_rect, 3, border_radius=10)
 
-        # Afficher le message de confirmation
-        msg_surface = self.font.render(message, True, self.COLOR_TEXT)
-        msg_rect = msg_surface.get_rect(center=(box_rect.centerx, box_rect.top + 60))
-        self.display_surface.blit(msg_surface, msg_rect)
+        # Afficher le message de confirmation sur 2 lignes
+        line1_surf = self.font.render(line1_text, True, self.COLOR_TEXT)
+        line1_rect = line1_surf.get_rect(center=(box_rect.centerx, box_rect.top + 50))
+
+        line2_surf = self.font.render(line2_text, True, self.COLOR_TEXT)
+        line2_rect = line2_surf.get_rect(center=(box_rect.centerx, box_rect.top + 80))
+        
+        self.display_surface.blit(line1_surf, line1_rect)
+        self.display_surface.blit(line2_surf, line2_rect)
 
         # Options 
         yes_text = "Yes"
@@ -973,12 +985,15 @@ class UI:
             
             # gestion clavier
             if event.type == pygame.KEYDOWN:
+
                 if event.key == pygame.K_p: 
                     inputs.append("TOGGLE_SETTINGS")
+
                 if game_state in ["VICTORY", "GAME_OVER"]:
                     if event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         exit()
+
                     # Si le jeu est fini, on n'écoute aucune autre touche
                     continue
                 # Le jeu ne fonctionne que si on n'est pas dans le menu settings
@@ -1013,7 +1028,7 @@ class UI:
                 # On vérifie d'abord le rouage (cliquable tout le temps)
                 if self.settings_icon_rect.collidepoint(event.pos):
                     inputs.append("TOGGLE_SETTINGS")
-                # On vérifie les boutons DU MENU (cliquables si le menu est ouvert)
+                # On vérifie les boutons du menu (cliquables si le menu est ouvert)
                 elif game_state == "SETTINGS":
                     # collidepoint pour voir si on a cliqué sur une checkbox
                     if self.music_mute_rect.collidepoint(event.pos):
@@ -1021,13 +1036,12 @@ class UI:
                     elif self.effects_mute_rect.collidepoint(event.pos):
                         inputs.append(("TOGGLE_EFFECTS_MUTE", True))
                     elif self.restart_button_rect.collidepoint(event.pos):
+                        self.restart_sound.play()
                         inputs.append("RESTART_GAME")
                     elif self.quit_button_rect.collidepoint(event.pos):
                         inputs.append("QUIT_GAME")
             
-        
-        # elif current_game_state == "GAME_OVER":
-            # self.draw_game_over_screen()
+        # Dessin de l'interface
         self.draw_background_grid()
         self.draw_elements()
         self.display_MAP(self.data['mapping'])
@@ -1035,7 +1049,6 @@ class UI:
         self.draw_inventory()
             
         if game_state == "VICTORY":
-                # si on gagne on dessine l'écran de victoire
                 self.draw_victory_screen()
         elif game_state == "GAME_OVER":
                 self.draw_game_over_screen()
@@ -1054,6 +1067,7 @@ class UI:
             self.draw_possible_actions()
             # Et on dessine la boîte de confirmation par-dessus
             self.draw_action_confirmation()
+            
         elif game_state == "DOOR_CONFIRMATION":
             # On ne dessine rien de spécial en fond,
             # juste la boîte de confirmation par-dessus la vue normale.

@@ -6,7 +6,6 @@ from player import *
 import copy
 # Définition des poids pour les raretés
 RARITY_WEIGHTS = {
-    'debug' : 100,
     'common': 10,
     'uncommon': 5,
     'rare': 2
@@ -91,8 +90,7 @@ class RandomManager:
             (room_Chest, 5),
             (room_Hole, 5),
             (room_Coin, 10), 
-            (room_Diamond, 5),
-            (room_locker, 90)
+            (room_Diamond, 5)
         ]
 
         self.room_actions = [item[0] for item in self.room_action_pool]
@@ -356,8 +354,12 @@ class RandomManager:
             source_pool_weights = self.action_weights.copy()
         elif room_name == "Attic":
             num_items_to_spawn = 8
-            source_pool_items = self.attic_loot_items    # Utilise le pool spécial
+            source_pool_items = self.attic_loot_items # Utilise le pool spécial
             source_pool_weights = self.attic_loot_weights.copy()
+        elif room_name == "Locker_Room":
+            num_items_to_spawn = random.randint(3, 5) # Une salle pleine de casiers
+            source_pool_items = [room_locker]
+            source_pool_weights = [1]
         else:
             # gére les salles normales
             base_spawn_chance = self.item_spawn_chance
@@ -367,7 +369,7 @@ class RandomManager:
             actions_weights = [50, 30, 20]
             actions_choices = [2, 3, 4]
 
-            if player.inventory.get_quantity("Charm Chroma") > 0: #
+            if player.inventory.get_quantity("Charm Chroma") > 0: 
                 charm_multiplier = 1.5
                 actions_weights = [30, 40, 30]
                 actions_choices = [3, 4, 5]

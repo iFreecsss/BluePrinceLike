@@ -88,7 +88,7 @@ class RegenerativeItem(Item):
 #INSTANTATION DES OBJETS
 
 player_Diamond = ConsumableItem("Diamond", "Images/Icons/diamond_icon.png", 1, "Used to purchase and place new rooms.") 
-player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1, "Opens locked doors (1 key) or double-locked doors (2 keys) and chests.") 
+player_Key = ConsumableItem("Key", "Images/Icons/key_icon.png", 1, "Opens locked doors (1 key) or double-locked doors (2 keys), chests and lockers.") 
 player_Footsteps = ConsumableItem("Footsteps", "Images/Icons/footsteps_icon.png", 1, "Your stamina. Moving and building consumes steps. Game Over if 0.") 
 player_Dice = ConsumableItem("Dice", "Images/Icons/dice_icon.png", 1, "Reroll the available room choices if you don't like them.") 
 player_Coin = ConsumableItem("Coin", "Images/Icons/coin_icon.png", 1, "Can be used to buy in stores") 

@@ -13,21 +13,18 @@ class Game:
         
         self.warning_message = None
 
-        self.player.inventory.add_item(player_Diamond.return_item_with_amount(10))
-        self.player.inventory.add_item(player_Key.return_item_with_amount(150))
+        # initialisation de l'inventaire du joueur
+        self.player.inventory.add_item(player_Diamond.return_item_with_amount(2))
+        self.player.inventory.add_item(player_Key.return_item_with_amount(0))
         self.player.inventory.add_item(player_Footsteps.return_item_with_amount(70))
-        self.player.inventory.add_item(player_Dice.return_item_with_amount(6))
-        self.player.inventory.add_item(player_Coin.return_item_with_amount(100))
-        #self.player.inventory.add_item(
-            #ConsumableItem("Dice", "Images/Icons/dice_icon.png", 5))
-        #self.player.inventory.add_item(shovel.return_item_with_amount(1))
+        self.player.inventory.add_item(player_Dice.return_item_with_amount(0))
+        self.player.inventory.add_item(player_Coin.return_item_with_amount(0))
         
         # les pioches se retrouvent ici
         self.random_manager = RandomManager()
 
-        # test implémentation tirage des pièces
-        # il y aura 2 modes. celui qui permet de se déplcacer librement 'EXPLORING' et celui qui oblige
-        #  à placer les pièces 'ROOM_DRAWING'
+        # il y aura 7 modes de jeu
+        # par défaut on commence en mode exploration qui est le mode principal
         self.game_state = 'EXPLORING'
         self._previous_game_state = 'EXPLORING'
 
@@ -43,11 +40,13 @@ class Game:
 
         # pour la gestion des confirmations d'actions (ex: ouvrir un coffre)
         self.pending_confirmation = None
+
         # rajout de la gestion des confirmations d'ouverture de porte
         self.pending_door_confirmation = None
 
         # pour la gestion des items au sol
         self.current_floor_item_index = 0
+
         #index de l'action choisie
         self.action_index = 0
         self.possible_actions = 0
@@ -161,15 +160,22 @@ class Game:
         # Si on arrive ici, c'est que la porte était de niveau 0 ou vient d'être déverrouillée
         
         if target_room is None:
-            self.sound_to_play = 'new_room'
-            # si la case adjacente est vide on peut lancer le tirage
-            self.game_state = "DRAWING_ROOM"
-            self.pending_placement_position = final_position
+            # On utilise test=True pour ne pas consommer le pas
+            if self.player.use(player_Footsteps.return_item_with_amount(1), test=True):
+                # Le joueur a des pas il peut tirer
+                self.sound_to_play = 'new_room'
+                # si la case adjacente est vide on peut lancer le tirage
+                self.game_state = "DRAWING_ROOM"
+                self.pending_placement_position = final_position
 
-            # On mémorise la direction par laquelle le joueur va entrer
-            # (Si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce)
-            self.pending_entry_direction = (self.player.direction + 2) % 4
-            self.draw_new_rooms()
+                # On mémorise la direction par laquelle le joueur va entrer
+                # (Si le joueur va au Nord (0), il entre par le Sud (2) de la nouvelle pièce)
+                self.pending_entry_direction = (self.player.direction + 2) % 4
+                self.draw_new_rooms()
+            else:
+                # Le joueur n'a pas de pas, il ne peut même pas initier le tirage.
+                # On appelle check_game_over pour voir s'il est vraiment coincé.
+                self.check_game_over()
         else:
             self.sound_to_play = 'footsteps'
             if self.player.use(player_Footsteps.return_item_with_amount(1)):
@@ -212,12 +218,6 @@ class Game:
     def handle_inputs(self, inputs):
         self.sound_to_play = None
 
-        #si le jeu est gagné ou perdu ya pas d'inputs
-        if self.game_state in ["VICTORY", "GAME_OVER"]:
-            return
-        
-
-
         if "TOGGLE_SETTINGS" in inputs:
             if self.game_state == "SETTINGS":
                 self.game_state = self._previous_game_state # Retour au jeu
@@ -242,7 +242,11 @@ class Game:
                     elif command == "TOGGLE_EFFECTS_MUTE":
                         self.is_effects_muted = not self.is_effects_muted
             return
-
+        
+        #si le jeu est gagné ou perdu on ne prend que les inputs des réglages
+        if self.game_state in ["VICTORY", "GAME_OVER"]:
+            return
+        
         if self.game_state == "EXPLORING":
             #self.handle_possible_actions() #Regarde le nombre d'action possibles
 
@@ -395,8 +399,7 @@ class Game:
                 current_room = self.map.get_current_mapping()[self.player.position]
                 # On appelle à nouveau handle_action mais en forçant l'exécution
                 self.warning_message = current_room.inventories.handle_action(self.player, action_index, force=True)
-            else: # "NON"
-                self.warning_message = "Chest opening aborted"
+            
 
             # On nettoie et on retourne à l'exploration
             self.game_state = "EXPLORING"
@@ -516,7 +519,6 @@ class Game:
             
             # Ne devrait jamais arriver mais on sait jamais
             if not self.room_choices:
-                print(f"ERROR: No room from the deck can be placed at {self.pending_placement_position}!")
                 self.game_state = "EXPLORING"
                 self.pending_placement_position = None
                 return
@@ -565,7 +567,6 @@ class Game:
             
             #AJOUT DE l'INVENTAIRE
             self.random_manager.assign_inventories_to_room(chosen_room, self.player)
-            ######################
 
             self.map.place_room(chosen_room, placement_pos)
             self.player.move(placement_pos)
@@ -611,8 +612,7 @@ class Game:
         room.change_room_orientation(0) 
 
         if not valid_rotations:
-            # Normalement c'est pas possible mais on sait jamais
-            print(f"Critical Error: Room '{room.name}' has no valid rotation.")
+            # Normalement c'est pas possible mais on sait jamais*
             self.game_state = "EXPLORING"
             self.room_choices = []
             self.pending_placement_position = None
@@ -651,7 +651,7 @@ class Game:
         """
         Vérifie si le joueur a perdu.
         La défaite survient à 0 pas, SEULEMENT s'il n'y a plus
-        d'objets donnant des pas (Pomme, Banane) à ramasser
+        d'objets à ramasser
         dans la salle actuelle.
         """
         # si le jeu est déjà gagné ou perdu, on ne fait rien
@@ -665,17 +665,38 @@ class Game:
             current_room = self.map.get_current_mapping()[self.player.position]
             room_inventory_list = current_room.inventories.inventory
             
-            step_item_available = False
-            for room_action in room_inventory_list:
+            is_stuck = False
+            is_stuck = False
+
+            # Logique spécifique si le joueur est dans une boutique
+            if current_room.room_type == 'Shop':
+                player_coins = self.player.inventory.get_quantity("Coin")
+                can_afford_anything = False
                 
-                if room_action.name in ["Apple", "Banana"]:
-                    step_item_available = True
-                    break
+                # On vérifie si le joueur peut acheter au moins un item
+                for item_for_sale in room_inventory_list:
+                    cost_item = item_for_sale.activation_condition # Le coût est la activation_condition
+                    
+                    # On vérifie si l'item a un coût en pièces
+                    if cost_item and cost_item.name == "Coin":
+                        if player_coins >= cost_item.quantity:
+                            can_afford_anything = True
+                            break # Le joueur peut acheter cet item, il n'est pas bloqué
+                
+                # Si on a parcouru tout le magasin et qu'il ne peut rien acheter
+                if not can_afford_anything:
+                    is_stuck = True
+
+            # Logique pour toutes les autres salles
+            else:
+                # Si l'inventaire de la salle est vide, le joueur est bloqué
+                if len(room_inventory_list) == 0:
+                    is_stuck = True
             
-            if not step_item_available:
-                # 0 pas et aucune pomme/banane à ramasser = GAME OVER
+            if is_stuck:
+                # 0 pas ET (salle vide OU shop où il ne peut rien acheter)
                 self.game_state = "GAME_OVER"
                 self.sound_to_play = "game_over"
             else:
-                # 0 pas mais il y a des objets à ramasser
-                self.warning_message = "You are out of steps! You must collect the items in this room."
+                # 0 pas mais il y a des objets (à ramasser ou à acheter)
+                self.warning_message = "You are out of steps! You must collect or buy items in this room."
