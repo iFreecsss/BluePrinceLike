@@ -41,6 +41,21 @@ class Player:
 
     def check_Item(self,condition : Item, item: Item, test=False):
         inventory = self.inventory.inventory
+        # On vérifie si l'item de butin (item) existe et est déja dans l'inventaire
+        # On le fait ici pour éviter les "None.name"
+        item_name_in_inventory = False
+
+        # Si test=True cela signifie que le marteau est utilisé.
+        # On ignore complètement la condition (la clé)
+        # et on passe directement à l'ajout du butin
+        if test:
+            if item_name_in_inventory:
+                inventory[item.name].add(item.quantity)
+            elif item: # S'il y a du butin (item n'est pas None)
+                item.use(self, item.quantity)
+            # On retourne True car l'action a réussi (le marteau a fonctionné)
+            return True
+        
         if not condition: 
             if item.name in inventory:
                 inventory[item.name].add(item.quantity) 
