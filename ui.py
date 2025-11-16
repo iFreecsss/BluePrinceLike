@@ -7,6 +7,110 @@ from inventory import *
 from item import *
 
 class UI:
+    '''
+    Gère l'intégralité de l'interface utilisateur (UI) et le rendu graphique.
+    
+    Cette classe utilise Pygame pour initialiser une fenêtre, dessiner tous 
+    les éléments du jeu (carte, joueur, inventaire, menus), et capter 
+    les entrées de l'utilisateur (clavier et souris). Elle communique avec 
+    la classe `Game` en recevant un dictionnaire `data` (`set_data`) et 
+    en retournant une liste d'actions (`run`).
+
+    Attributes
+    ----------
+    data : dict
+        Dictionnaire contenant l'état actuel du jeu reçu de `Game`.
+    SCREEN_WIDTH : int
+        Largeur de la fenêtre de jeu en pixels.
+    SCREEN_HEIGHT : int
+        Hauteur de la fenêtre de jeu en pixels.
+    MARGIN : int
+        Marge standard utilisée pour espacer les éléments de l'UI.
+    display_surface : pygame.Surface
+        La surface principale sur laquelle tous les éléments sont dessinés.
+    clock : pygame.time.Clock
+        Horloge Pygame pour limiter le framerate.
+    COLOR_BACKGROUND : tuple
+        Couleur de fond de la fenêtre (R, G, B).
+    font : pygame.font.Font
+        Police de caractère principale pour l'UI.
+    message_font : pygame.font.Font
+        Police utilisée pour les messages d'avertissement.
+    settings_font_small : pygame.font.Font
+        Petite police pour le menu des paramètres.
+    settings_font_large : pygame.font.Font
+        Grande police pour le titre du menu des paramètres.
+    inventory_font_large : pygame.font.Font
+        Police pour le titre de l'inventaire.
+    inventory_font_small : pygame.font.Font
+        Police pour la description des objets.
+    inventory_item_font : pygame.font.Font
+        Police pour la quantité des objets.
+    new_room_sound : pygame.mixer.Sound
+        Effet sonore joué lors du placement d'une nouvelle salle.
+    footsteps_sound : pygame.mixer.Sound
+        Effet sonore joué lors du déplacement du joueur.
+    dice_sound : pygame.mixer.Sound
+        Effet sonore joué lors du "reroll" des salles.
+    rotate_sound : pygame.mixer.Sound
+        Effet sonore joué lors de la rotation d'une salle (Rotunda).
+    game_over_sound : pygame.mixer.Sound
+        Effet sonore joué sur l'écran de Game Over.
+    victory_sound : pygame.mixer.Sound
+        Effet sonore joué sur l'écran de Victoire.
+    restart_sound : pygame.mixer.Sound
+        Effet sonore joué lors du clic sur "Restart".
+    restart_icon : pygame.Surface
+        Image de l'icône "Restart".
+    quit_icon : pygame.Surface
+        Image de l'icône "Quitter".
+    settings_icon : pygame.Surface
+        Image de l'icône "Paramètres" (engrenage).
+    diamond_icon : pygame.Surface
+        Image de l'icône "Diamant".
+    dice_icon : pygame.Surface
+        Image de l'icône "Dé".
+    item_icon_cache : dict
+        Cache pour stocker les images des objets déjà chargées et redimensionnées.
+    room_image_cache : dict
+        Cache pour stocker les images des salles déjà chargées, tournées et redimensionnées.
+    main_view_rect : pygame.Rect
+        Rectangle définissant la zone d'affichage de la carte.
+    inventory_rect : pygame.Rect
+        Rectangle définissant la zone d'affichage de l'inventaire.
+    current_room_panel_rect : pygame.Rect
+        Rectangle pour afficher l'image de la salle actuelle.
+    draw_room_rect : pygame.Rect
+        Rectangle pour la zone d'action (choix de salle ou actions dans la salle).
+    settings_icon_rect : pygame.Rect
+        Rectangle de collision pour le bouton "Paramètres".
+    settings_panel_rect : pygame.Rect
+        Rectangle du panneau des paramètres.
+    music_slider_rect : pygame.Rect
+        Rectangle de la barre du slider de musique.
+    effects_slider_rect : pygame.Rect
+        Rectangle de la barre du slider des effets sonores.
+    music_mute_rect : pygame.Rect
+        Rectangle de la checkbox "Mute Musique".
+    effects_mute_rect : pygame.Rect
+        Rectangle de la checkbox "Mute Effets".
+    restart_button_rect : pygame.Rect
+        Rectangle de collision pour le bouton "Restart".
+    quit_button_rect : pygame.Rect
+        Rectangle de collision pour le bouton "Quitter".
+    map : Map
+        Une instance de Map (utilisée uniquement pour `init_cell_Mapping`).
+    cell_mapping : numpy.ndarray
+        Grille 2D (5x9) contenant les `pygame.Rect` de chaque cellule de la carte.
+    message_text : str
+        Le texte du message d'avertissement à afficher.
+    message_timer : int
+        Timestamp (en ms) de l'apparition du message.
+    MESSAGE_DURATION : int
+        Durée d'affichage d'un message en millisecondes.
+    action_index : int
+        Index de l'action actuellement sélectionnée dans la salle.
+    '''
     def __init__(self):
         #Données d'affichage
         self.data= {}
@@ -35,7 +139,8 @@ class UI:
         self.action_index = 0
 
     def init_pygame(self):
-        #Pygame window init
+        '''Initialise Pygame, le mixer audio et la fenêtre d'affichage principale.'''
+        
         pygame.init()
         pygame.mixer.init()
 
@@ -44,7 +149,7 @@ class UI:
         self.clock = pygame.time.Clock()
 
     def init_colors_and_fonts(self):
-        #Initialisation des couleurs et polices
+        '''Définit toutes les couleurs et polices de caractères utilisées dans l'UI.'''
         
         # Jeu principal
         self.COLOR_BACKGROUND = (14, 38, 82)
@@ -77,7 +182,8 @@ class UI:
         self.inventory_item_font = pygame.font.SysFont('Arial', 16, bold=True)
 
     def init_sounds(self):
-        # initialisation du mixer pour les sons
+        '''Charge et configure tous les fichiers audio (musique et effets sonores).'''
+        
         pygame.mixer.init()
         pygame.mixer.music.load('Sounds\\Mood\\29. Ovinn Nevarei.mp3') 
         pygame.mixer.music.set_volume(0.4) # volume 40%
@@ -105,6 +211,8 @@ class UI:
         self.restart_sound.set_volume(0.5)
 
     def init_images(self):
+        '''Charge, redimensionne et stocke les images des icônes de l'UI.'''
+        
         # icone restart
         self.restart_icon = pygame.image.load('Images/Icons/restart_icon.png').convert_alpha()        
         self.restart_icon = pygame.transform.scale(self.restart_icon, (50, 50))
@@ -129,11 +237,26 @@ class UI:
         self.room_image_cache = {}
 
     def wrap_text(self, text, font, max_width):
-        """
-        Coupe un texte en plusieurs lignes pour qu'il ne dépasse pas
-        une largeur maximale (max_width).
-        Prend en compte les retours à la ligne manuels ('\n').
-        """
+        '''
+        Coupe un texte en plusieurs lignes pour s'adapter à une largeur maximale.
+        
+        Gère les retours à la ligne manuels ('\n') ainsi que la césure 
+        automatique des mots.
+
+        Parameters
+        ----------
+        text : str
+            Le texte à couper.
+        font : pygame.font.Font
+            La police utilisée pour calculer la largeur du texte.
+        max_width : int
+            La largeur maximale en pixels que le texte ne doit pas dépasser.
+
+        Returns
+        -------
+        list
+            Une liste de chaînes de caractères, où chaque chaîne est une ligne.
+        '''
         lines = []
         
         paragraphs = text.split('\n')
@@ -158,7 +281,11 @@ class UI:
         return lines
 
     def create_layout(self):
-        #Définition des dimensions des différentes parties de l'UI
+        '''
+        Définit les rectangles (`pygame.Rect`) pour tous les panneaux 
+        principaux de l'interface (carte, inventaire, etc.).
+        '''
+        
         self.INVENTORY_WIDTH, self.INVENTORY_HEIGHT = 680,200
         self.MAP_WIDTH, self.MAP_HEIGHT = 355, (self.SCREEN_HEIGHT - (2 * self.MARGIN))
         self.ACTION_MENU_WIDTH, self.ACTION_MENU_HEIGHT = 920, 400
@@ -190,6 +317,11 @@ class UI:
         self.create_settings_layout()
 
     def create_settings_layout(self):
+        '''
+        Définit les rectangles (`pygame.Rect`) spécifiques au menu des 
+        paramètres (panneau, sliders, checkboxes, boutons).
+        '''
+        
         # Panneau principal
         panel_width, panel_height = 500, 400
         panel_x = (self.SCREEN_WIDTH - panel_width) // 2
@@ -216,6 +348,16 @@ class UI:
         self.quit_button_rect = pygame.Rect(panel_x + panel_width - p - 50, panel_y + panel_height - p - 50, 50, 50)
 
     def init_cell_Mapping(self):
+        '''
+        Crée une grille numpy 5x9 contenant les `pygame.Rect` pour chaque 
+        cellule de la carte, en fonction de `self.MAP_WIDTH` et `self.MAP_HEIGHT`.
+
+        Returns
+        -------
+        numpy.ndarray
+            Le tableau 2D (5x9) des rectangles de cellule.
+        '''
+        
         cell_mapping = np.empty((5,9), dtype=np.object_)
 
         cell_width = self.MAP_WIDTH // 5
@@ -232,6 +374,18 @@ class UI:
         return cell_mapping
 
     def display_MAP(self, map_array):
+        '''
+        Dessine toutes les salles présentes dans `map_array` sur la grille.
+        
+        Utilise `self.room_image_cache` pour optimiser le rendu en ne 
+        chargeant/tournant/redimensionnant chaque image de salle qu'une seule fois.
+
+        Parameters
+        ----------
+        map_array : numpy.ndarray
+            Le tableau 2D (5x9) de `RoomObject` provenant de `Game.map`.
+        '''
+        
         #Divise la carte en 45 cellules (cells) pour poser chacune des chambres
         active_rooms = [(i, j) for i in range(map_array.shape[0]) for j in range(map_array.shape[1]) if map_array[i, j] is not None]
 
@@ -267,6 +421,17 @@ class UI:
                     raise ValueError(f"Image non trouvée pour display_map image {map_array[x,y].name}")
 
     def display_current_room(self, map_array, player_position):
+        '''
+        Affiche une image agrandie de la salle où se trouve le joueur.
+
+        Parameters
+        ----------
+        map_array : numpy.ndarray
+            Le tableau 2D (5x9) de `RoomObject`.
+        player_position : tuple
+            Coordonnées (x, y) actuelles du joueur.
+        '''
+        
         player_x, player_y = player_position
         if hasattr(map_array[player_x,player_y], 'image'):
             img = pygame.image.load(map_array[player_x,player_y].image).convert_alpha()
@@ -277,6 +442,20 @@ class UI:
             pass
 
     def display_Player(self, player_position, player_direction):
+        '''
+        Indique la position et l'orientation du joueur sur la carte.
+        
+        Dessine un contour blanc autour de la cellule du joueur et une ligne 
+        épaisse sur le bord indiquant sa direction.
+
+        Parameters
+        ----------
+        player_position : tuple
+            Coordonnées (x, y) actuelles du joueur.
+        player_direction : int
+            Direction (0-3) vers laquelle le joueur fait face.
+        '''
+        
         WHITE = (255, 255, 255)
         WIDTH = 5
         player_x, player_y = player_position
@@ -306,7 +485,7 @@ class UI:
             raise ValueError("Valeur impossible de direction")
     
     def draw_background_grid(self):
-        """Dessine la grille de fond sur la surface d'affichage."""
+        '''Dessine le fond uni et la grille décorative de l'écran.'''
         self.display_surface.fill(self.COLOR_BACKGROUND)
         for x in range(0, self.SCREEN_WIDTH, 40):
             pygame.draw.line(self.display_surface, self.COLOR_GRID_LIGHT, (x, 0), (x, self.SCREEN_HEIGHT))
@@ -314,7 +493,7 @@ class UI:
             pygame.draw.line(self.display_surface, self.COLOR_GRID_LIGHT, (0, y), (self.SCREEN_WIDTH, y))
 
     def draw_elements(self):
-        """Dessine les panneaux et les images de l'interface."""
+        '''Dessine les cadres de tous les panneaux de l'UI (carte, inventaire, etc.).'''
         # Cadre général et Panneaux
         pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.main_border_rect, 3, border_radius=10)
         pygame.draw.rect(self.display_surface, self.COLOR_BACKGROUND, self.main_view_rect, border_radius=10)
@@ -329,9 +508,13 @@ class UI:
         pygame.draw.rect(self.display_surface, self.COLOR_PANEL_BORDER, self.draw_room_rect, 3, border_radius=10)
 
     def draw_room_choice_screen(self):
-        """
-        Affiche les 3 salles tirées au hasard dans le panneau self.draw_room_rect.
-        """
+        '''
+        Affiche l'écran de sélection de salle (état 'DRAWING_ROOM').
+        
+        Dessine les 3 salles proposées (issues de `self.data['room_choices']`), 
+        met en surbrillance la salle sélectionnée (`self.data['current_choice_index']`),
+        et affiche leur coût en diamants.
+        '''
         # le rectangle prévu à l'effet des choix de salle
         panel = self.draw_room_rect 
         # titre
@@ -408,6 +591,19 @@ class UI:
             self.display_surface.blit(reroll_text_surface, reroll_text_rect)
 
     def set_data(self, data):
+        '''
+        Met à jour l'état de l'UI avec les dernières données de la logique de jeu.
+        
+        Cette méthode déclenche également les effets sonores demandés 
+        (via `data['sound_to_play']`), ajuste les volumes audio et 
+        configure le `warning_message` à afficher.
+
+        Parameters
+        ----------
+        data : dict
+            Le dictionnaire d'état complet envoyé par `Game.publish_data()`.
+        '''
+        
         self.data = data
 
         # gestion des sons
@@ -453,11 +649,14 @@ class UI:
             self.message_timer = pygame.time.get_ticks()
             
     def draw_warning_message(self):
-        """
-        Affiche le message d'avertissement au centre de la CARTE s'il existe
-        et si son minuteur n'est pas écoulé.
-        Gère maintenant les messages sur plusieurs lignes.
-        """
+        '''
+        Affiche le message d'avertissemen `self.message_text` actuel au centre 
+        de la vue de la carte.
+        
+        Le message disparaît automatiquement après `MESSAGE_DURATION` 
+        millisecondes. Gère les messages sur plusieurs lignes.
+        '''
+        
         if self.message_text:
             current_time = pygame.time.get_ticks()
             
@@ -502,9 +701,7 @@ class UI:
                 self.message_timer = 0
 
     def draw_victory_screen(self):
-        """
-        Affiche l'écran de victoire.
-        """
+        '''Affiche l'écran de Victoire (état 'VICTORY').'''
         self.display_surface.fill(self.COLOR_BACKGROUND)
         
         victory_font = pygame.font.SysFont('Arial', 80, bold=True)
@@ -537,9 +734,8 @@ class UI:
         self.display_surface.blit(quit_text_surface, quit_text_rect)
     
     def draw_game_over_screen(self):
-        """
-        Affiche l'écran de Game Over.
-        """
+        '''Affiche l'écran de Game Over (état 'GAME_OVER').'''
+        
         self.display_surface.fill(self.COLOR_BACKGROUND)
         
         game_over_font = pygame.font.SysFont('Arial', 80, bold=True)
@@ -572,6 +768,26 @@ class UI:
         self.display_surface.blit(quit_text_surface, quit_text_rect)
 
     def draw_settings_menu(self, mouse_pos, mouse_pressed):
+        '''
+        Affiche le menu des paramètres (état 'SETTINGS') et gère ses interactions.
+        
+        Gère les clics et le glissement sur les sliders de volume, ainsi 
+        que les clics sur les checkboxes "Mute".
+
+        Parameters
+        ----------
+        mouse_pos : tuple
+            Position actuelle de la souris (x, y).
+        mouse_pressed : bool
+            True si le bouton gauche de la souris est actuellement enfoncé.
+
+        Returns
+        -------
+        list
+            Une liste d'entrées (tuples) spécifiques aux paramètres, 
+            ex: [("SET_MUSIC_VOLUME", 0.5)].
+        '''
+        
         inputs = [] 
 
         # Panneau settings principal avec transparence
@@ -655,7 +871,12 @@ class UI:
         return inputs
 
     def draw_inventory(self):
-        """Dessine le contenu de l'inventaire dans le panneau self.inventory_rect."""
+        '''
+        Affiche les objets de l'inventaire du joueur (`self.data['inventory_items']`).
+        
+        Affiche les icônes, la quantité pour les objets consommables, et 
+        déclenche `draw_item_description` si la souris survole un objet.
+        '''
         
         panel_rect = self.inventory_rect
 
@@ -741,7 +962,20 @@ class UI:
             self.draw_item_description(overflied_item, mouse_pos)
 
     def draw_item_description(self, item, mouse_pos):
-        """Affiche une petite fenêtre avec le nom et la description de l'objet"""
+        '''
+        Affiche une infobulle (tooltip) avec le nom et la description de l'objet.
+        
+        Apparaît près du curseur lorsque la souris survole un objet 
+        dans l'inventaire.
+
+        Parameters
+        ----------
+        item : Item
+            L'objet (`Item` ou sous-classe) à décrire.
+        mouse_pos : tuple
+            Position (x, y) actuelle de la souris, utilisée pour positionner 
+            l'infobulle.
+        '''
         
         padding = 10
         bg_color = (30, 30, 30)
@@ -783,6 +1017,13 @@ class UI:
         self.display_surface.blit(desc_surf, (x + padding, y + padding + title_surf.get_height() + 5))    
 
     def draw_possible_actions(self):
+        '''
+        Affiche la liste des actions possibles dans la salle (état 'EXPLORING').
+        
+        Utilise `self.data['roomactions']` pour les textes et 
+        `self.data['action_index']` pour surligner l'action sélectionnée.
+        '''
+        
         panel = self.draw_room_rect
 
         action_messages = self.data.get('roomactions', [])
@@ -820,7 +1061,10 @@ class UI:
             self.display_surface.blit(action_text, text_rect)
 
     def draw_door_opening_confirmation(self):
-        """Affiche une boîte "Oui/Non" par-dessus l'écran d'action."""
+        '''
+        Affiche la boîte de dialogue "Oui/Non" pour la confirmation 
+        d'ouverture de porte (état 'DOOR_CONFIRMATION').
+        '''
         
         pending_data = self.data.get('pending_door_confirmation')
         if not pending_data:
@@ -884,7 +1128,10 @@ class UI:
         self.display_surface.blit(no_surf, no_surf.get_rect(center=no_rect_bg.center))
 
     def draw_action_confirmation(self):
-        """Affiche une boîte "Oui/Non" par-dessus l'écran d'action."""
+        '''
+        Affiche la boîte de dialogue "Oui/Non" générique pour la 
+        confirmation d'action (état 'ACTION_CONFIRMATION').
+        '''
         
         pending_data = self.data.get('pending_confirmation')
         if not pending_data:
@@ -939,7 +1186,23 @@ class UI:
         self.display_surface.blit(no_surf, no_surf.get_rect(center=no_rect_bg.center))
 
     def run(self):
-        """Lance la boucle de jeu principale qui gère les événements et le dessin."""
+        '''
+        La boucle principale de l'interface utilisateur.
+        
+        Cette méthode est appelée à chaque frame. Elle :
+        1. Gère les événements Pygame (clavier, souris, quitter).
+        2. Traduit ces événements en une liste d'actions (`inputs`).
+        3. Appelle toutes les méthodes de dessin (`draw_*`) appropriées 
+            en fonction du `game_state` actuel.
+        4. Met à jour l'affichage (`pygame.display.update()`).
+        5. Régule le framerate.
+
+        Returns
+        -------
+        list
+            Une liste d'actions (str ou tuples) à envoyer à `Game.handle_inputs()`.
+            Ex: ["UP", "SPACE", ("SET_MUSIC_VOLUME", 0.7)].
+        '''
         inputs = []
         
         # état de la souris
