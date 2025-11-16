@@ -3,26 +3,90 @@ from room import *
 
 
 class Map:
-    """
-    Lists all possible rooms in the mansion and manages their interaction
-    """
+    '''
+    Gère la grille 5x9 du manoir et le placement des salles.
+    
+    Cette classe contient la structure de données (un tableau NumPy) 
+    qui représente la carte du jeu. Elle initialise la salle d'entrée 
+    et de sortie et fournit des méthodes pour placer de nouvelles 
+    salles et valider leur position.
+
+    Attributes
+    ----------
+    mapping : numpy.ndarray
+        Un tableau NumPy de 5x9 (shape (5,9)) de type `object`. 
+        Chaque cellule contient soit `None`, soit une instance 
+        de `RoomObject`.
+    '''
 
     def __init__(self):
+        '''
+        Initialise la carte.
+        
+        Crée une grille 5x9 vide et y place 'EntryHall' (2,8) 
+        et 'AnteChamber' (2,0).
+        '''
+        
         self.mapping =  np.empty((5,9), dtype=np.object_)
         self.mapping[2,8] = EntryHall()
         self.mapping[2,0] = AnteChamber()
 
     
     def place_room(self, room, position):
+        '''
+        Place une instance de salle sur la carte à une position donnée.
+
+        Parameters
+        ----------
+        room : RoomObject
+            L'instance de la salle (ex: `Aquarium()`) à placer.
+        position : tuple
+            Les coordonnées (x, y) où placer la salle.
+        '''
+        
         # position est un tuple (x, y)
         x, y = position
         self.mapping[x, y] = room
     
 
     def get_current_mapping(self):
+        '''
+        Retourne la grille actuelle de la carte.
+
+        Returns
+        -------
+        numpy.ndarray
+            Le tableau 5x9 `self.mapping` contenant l'état actuel 
+            de la carte.
+        '''
+        
         return self.mapping
     
     def is_placement_valid(self, room_to_place, position):
+        '''
+        Vérifie si une salle (avec son orientation déjà définie) 
+        peut être placée à une position donnée.
+        
+        La validité est déterminée en vérifiant la compatibilité des 
+        portes avec les 4 voisins (murs de la grille ou autres salles).
+        Une porte ne peut pas faire face à un mur (de grille ou 
+        d'une autre salle), et une porte doit faire face à une autre porte.
+        
+        Parameters
+        ----------
+        room_to_place : RoomObject
+            L'instance de la salle, *déjà orientée* (après rotation), 
+            à tester.
+        position : tuple
+            Les coordonnées (x, y) du placement à tester.
+
+        Returns
+        -------
+        bool
+            True si le placement est valide (pas de conflits de portes), 
+            False sinon.
+        '''
+        
         x, y = position
         
         # (Direction, (Voisin_X, Voisin_Y))

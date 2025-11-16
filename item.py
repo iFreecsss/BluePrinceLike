@@ -3,9 +3,25 @@ import random
 import copy
 
 class Item(ABC): 
-    """
-    Classe de base abstraite pour tous les objets du jeu définit interface commune
-    """
+    '''
+    Classe de base abstraite pour tous les objets (items) du jeu.
+    
+    Définit une interface commune pour tous les objets, y compris leurs 
+    attributs de base (nom, image, quantité) et les méthodes abstraites 
+    pour leur utilisation et leur ajout.
+    
+    Attributes
+    ----------
+    name : str
+        Le nom de l'objet (ex: "Diamond", "Shovel").
+    description : str
+        Courte description de l'objet pour l'UI (infobulle).
+    image_path : str
+        Chemin d'accès au fichier image de l'icône de l'objet.
+    quantity : int
+        La quantité de l'objet. Vaut 1 pour les non-consommables.
+    '''
+    
     def __init__(self, name, image_path, quantity = 1, description=""):
         self.name = name
         self.description = description
@@ -13,40 +29,103 @@ class Item(ABC):
         self.quantity = quantity
     
     def set_quantity(self, quantity):
+        '''
+        Définit la quantité de l'objet.
+        
+        Parameters
+        ----------
+        quantity : int
+            La nouvelle quantité à assigner.
+        '''
+        
         self.quantity = quantity
     @abstractmethod
     def use(self, player, amount):
-        """
-        Méthode abstraite pour utiliser l'objet => dépendra du type d'objet.
-        """
+        '''
+        Méthode abstraite pour utiliser l'objet.
+        
+        La logique spécifique (consommer, équiper, ajouter un autre objet) 
+        est définie dans les sous-classes.
+
+        Parameters
+        ----------
+        player : Player
+            L'instance du joueur qui utilise l'objet.
+        amount : int
+            La quantité à utiliser (la logique d'utilisation peut différer).
+        '''
+        
         pass
     @abstractmethod
     def add(self, amount):
-        """
-        Méthode abstraite pour ajouter une certaine quantité à l'objet => dépendra du type d'objet.
-        """
+        '''
+        Méthode abstraite pour ajouter une quantité à l'objet.
+        
+        Principalement pour les objets empilables.
+        
+        Parameters
+        ----------
+        amount : int
+            La quantité à ajouter.
+        '''
+        
         pass
 
     def return_item_with_amount(self, quantity):
-        """
-        Renvoie une copie de l'instance de l'objet avec une quantité spécifié par le joueur.
-        """
+        '''
+        Renvoie une nouvelle copie (deepcopy) de l'instance de l'objet 
+        avec une quantité spécifiée par le joueur.
+        
+        Parameters
+        ----------
+        quantity : int
+            La quantité désirée pour la nouvelle instance.
+            
+        Returns
+        -------
+        Item
+            Une nouvelle instance de l'objet avec la quantité définie.
+        '''
+        
         item_copy = copy.deepcopy(self)
         item_copy.quantity = quantity
         return item_copy
 
 class ConsumableItem(Item):
-    """
-    Un objet consommable qui s'empile (ex: pièces, pas) + hérite de Item.
-    """
+    '''
+    Un objet consommable qui s'empile (ex: pièces, pas, clés).
+    Hérite de Item.
+    
+    Attributes
+    ----------
+    (Hérités de Item)
+    '''
+    
     def __init__(self, name, image_path, quantity=1, description=""):
         super().__init__(name, image_path, quantity, description)
     
     def use(self, player, amount=0):
-        """
-        Tente d'utiliser (consommer) une certaine quantité de l'objet.
-        Retourne True si l'utilisation a réussi, False sinon.
-        """
+        '''
+        Tente d'utiliser (consommer) une quantité de l'objet de 
+        l'inventaire du joueur.
+        
+        La quantité consommée est `self.quantity` (la quantité de 
+        l'instance passée en paramètre, ex: 2 clés).
+        
+        Parameters
+        ----------
+        player : Player
+            L'instance du joueur dont l'inventaire sera affecté.
+        amount : int, optional
+            Paramètre ignoré (présent pour la compatibilité de l'interface).
+        
+        Returns
+        -------
+        bool
+            True si le joueur avait assez d'objets et qu'ils ont été 
+            consommés, False sinon.
+        '''
+        
         inventory = player.inventory.inventory
         if self.name in inventory:
             if inventory[self.name].quantity - self.quantity >= 0:
@@ -56,34 +135,131 @@ class ConsumableItem(Item):
                 return False
     
     def add(self, amount):
+        '''
+        Augmente la quantité de cet objet.
+        
+        Parameters
+        ----------
+        amount : int
+            La quantité à ajouter.
+        '''
         self.quantity += amount
 
 class NonConsumableItem(Item):
-    """
-    Un objet non consommable (unique) (ex: pelle) + hérite de Item.
-    """
+    '''
+    Un objet non consommable (unique) (ex: pelle, marteau).
+    Hérite de Item.
+    
+    Attributes
+    ----------
+    (Hérités de Item)
+    '''
+    
     def __init__(self, name, image_path,quantity=1, description=""):
         super().__init__(name, image_path, quantity, description)
 
     def add(self,amount):
+        '''
+        Ne fait rien (les objets non-consommables ne s'empilent pas).
+
+        Parameters
+        ----------
+        amount : int
+            Quantité ignorée.
+        '''
         pass
 
     def use(self, player, amount):
-        """
-        Cette fonction renvoie True, cela vient du fait que si l'utilisateur arrive a utiliser l'objet cela veut dire qu'il existe dans son inventaire.
-        """
+        '''
+        Logique d'utilisation pour un non-consommable.
+        
+        Dans ce contexte (appelé par `player.check_Item`), cette 
+        méthode signifie "s'ajouter à l'inventaire du joueur".
+
+        Parameters
+        ----------
+        player : Player
+            Le joueur qui reçoit l'objet.
+        amount : int
+            Paramètre ignoré.
+
+        Returns
+        -------
+        bool
+            Toujours True.
+        '''
+        
         player.inventory.add_item(self)
         return True
 
 class RegenerativeItem(Item):
+    '''
+    Un objet consommable qui donne un autre objet lorsqu'il est utilisé 
+    (ex: Pomme -> Pas). Hérite de Item.
+    
+    Attributes
+    ----------
+    regenerate : Item
+        L'instance de l'objet (ex: Footsteps) à donner au joueur 
+        lors de l'utilisation, avec la quantité à donner.
+    (Autres hérités de Item)
+    '''
+    
     def __init__(self, name, image_path,quantity=1, regenerate : Item = None, amount=1, description=""):
+        '''
+        Initialise l'objet régénératif.
+        
+        Parameters
+        ----------
+        name : str
+            Nom de l'objet (ex: "Apple").
+        image_path : str
+            Chemin de l'image.
+        quantity : int
+            Quantité de cet objet (ex: 1 Pomme).
+        regenerate : Item
+            L'objet *modèle* à régénérer (ex: `player_Footsteps`).
+        amount : int
+            La quantité de `regenerate` à donner (ex: 2 Pas).
+        description : str
+            Description de l'objet.
+        '''
         super().__init__(name, image_path, quantity, description)
         self.regenerate = regenerate.return_item_with_amount(amount)
         
     def add(self,amount):
+        '''
+        Ne fait rien.
+        
+        Parameters
+        ----------
+        amount : int
+            Quantité ignorée.
+        '''
+        
         pass
 
     def use(self, player, amount):
+        '''
+        Utilise l'objet en ajoutant l'objet `self.regenerate` à 
+        l'inventaire du joueur.
+        
+        Le nombre d'objets régénérés est `self.regenerate.quantity`, 
+        répété `self.quantity` fois.
+        
+        Parameters
+        ----------
+        player : Player
+            Le joueur qui reçoit l'objet régénéré.
+        amount : int
+            Paramètre ignoré.
+        
+        Returns
+        -------
+        bool
+            Toujours True.
+        '''
+        
         for _ in range(self.quantity):
             player.inventory.add_item(self.regenerate)
         return True
