@@ -2,19 +2,37 @@ from item import *
 import re
 
 class Inventory:
-    """
+    '''
     Gère les objets possédés par le joueur.
-    Sépare les consommables (empilables) des non-consommables (uniques).
-    """
+    
+    Stocke les objets dans un dictionnaire, faisant la distinction
+    entre les consommables (empilables) et les non-consommables (uniques)
+    lors de l'ajout.
+    
+    Attributes
+    ----------
+    inventory : dict
+        Stocke les objets du joueur. Les clés sont les noms (str) 
+        des objets et les valeurs sont les instances (Item) de ces objets.
+    '''
+    
     def __init__(self):
         self.inventory = {}
 
     def add_item(self, item_to_add : Item):
-        """
+        '''
         Ajoute un objet à l'inventaire.
+        
         Si c'est un consommable déjà possédé, augmente la quantité.
         Si c'est un non-consommable, l'ajoute s'il n'est pas déjà présent.
-        """
+        
+        Parameters
+        ----------
+        item_to_add : Item
+            L'instance de l'objet (ConsumableItem ou NonConsumableItem) 
+            à ajouter.
+        '''
+        
         if isinstance(item_to_add, ConsumableItem):
             if item_to_add.name in self.inventory:
                 # Si le joueur a déjà cet objet on ajoute juste la quantité
@@ -29,18 +47,65 @@ class Inventory:
                 self.inventory[item_to_add.name] = item_to_add
 
     def get_quantity(self, item_name):
-        """Retourne la quantité d'un consommable (0 si non possédé)"""
+        '''
+        Retourne la quantité d'un objet possédé.
+
+        Parameters
+        ----------
+        item_name : str
+            Le nom de l'objet à vérifier.
+
+        Returns
+        -------
+        int
+            La quantité de l'objet (0 si non possédé).
+        '''
+        
         if item_name in self.inventory:
             return self.inventory[item_name].quantity
         return 0
 
     def get_all_items(self):
-        """Retourne une seule liste de tous les objets pour l'affichage dans l'inventaire"""
+        '''
+        Retourne une liste de tous les objets pour l'affichage dans l'inventaire.
+        
+        Returns
+        -------
+        list
+            Une liste de toutes les instances d'objets (Item) 
+            présentes dans l'inventaire.
+        '''
+        
         all_items = list(self.inventory.values())
         return all_items
     
 
 class RoomInventoryObject():
+    '''
+    Représente une action ou un objet interactif dans une salle.
+    
+    Contient le nom de l'action, l'objet de récompense (`item`), 
+    le coût (`activation_condition`), les messages d'UI, et si 
+    l'action nécessite une confirmation.
+
+    Attributes
+    ----------
+    name : str
+        Le nom de l'action (ex: "Chest", "Apple").
+    item : Item or Inventory
+        L'objet (ou le butin d'un coffre) que le joueur reçoit.
+    activation_condition : Item
+        L'objet requis (coût) pour activer l'action (ex: une Clé, des Pièces).
+    action_message : str
+        Le message formaté affiché dans la liste d'actions de l'UI.
+    action_success : str
+        Le message formaté affiché en cas de succès de l'action.
+    action_failure : str
+        Le message formaté affiché en cas d'échec de l'action.
+    confirmation : bool
+        Si True, l'action demandera une confirmation (Oui/Non) à l'UI.
+    '''
+    
     def __init__(self, name, item, activation_condition, action_message, action_sucess, action_failure, confirmation=False):
         self.name = name
         self.item = item
@@ -52,12 +117,27 @@ class RoomInventoryObject():
         self.set_message()
     
     def string_to_message(self, message, replacements):
-        """
-        Dans le message donnée, remplace _0, _1 ect par les élements trouvé à l'index indiqué dans la liste remplacements.
+        '''
+        Dans le message donnée, remplace les marqueurs (_0, _1) par les 
+        élements trouvé à l'index indiqué dans la liste remplacements.
+        
         Ex replacement = ["Apples","2"]
         message = "You took _1 _0"
         Devient "You took 2 Apples"
-        """
+        
+        Parameters
+        ----------
+        message : str
+            La chaîne de caractères modèle (ex: "Prendre _0 x _1").
+        replacements : list
+            La liste des valeurs à insérer (ex: ["Apple", 2]).
+
+        Returns
+        -------
+        str
+            Le message formaté (ex: "Prendre Apple x 2").
+        '''
+        
         if not replacements:
             return message
 
@@ -72,6 +152,12 @@ class RoomInventoryObject():
         return pattern.sub(replacer, message)
     
     def set_message(self):
+        '''
+        Initialise ou met à jour les messages (action, succès, échec) 
+        en utilisant `string_to_message` pour insérer les détails 
+        de l'objet (`item`).
+        '''
+        
         replacements = []
         if self.item is None:
             replacements = [self.name]
@@ -91,36 +177,147 @@ class RoomInventoryObject():
 room_items_dictionary = {}
 
 class RoomInventory():
-
+    '''
+    Gère la collection d'actions (`RoomInventoryObject`) disponibles dans une salle.
+    
+    Attributes
+    ----------
+    inventory : list
+        Une liste d'instances `RoomInventoryObject` représentant les 
+        actions/objets dans la salle.
+    '''
+    
     def __init__(self):
         self.inventory = [ ]
     
     def addInventory(self, inventory_Item):
+        '''
+        Ajoute une action à l'inventaire de la salle.
+        
+        Parameters
+        ----------
+        inventory_Item : RoomInventoryObject
+            L'instance de l'action à ajouter.
+        '''
+        
         if isinstance(inventory_Item, RoomInventoryObject):
             self.inventory.append(inventory_Item)
     
     def get_action_number(self):
+        '''
+        Retourne le nombre d'actions disponibles dans la salle.
+        
+        Returns
+        -------
+        int
+            Le nombre d'objets `RoomInventoryObject` dans la liste.
+        '''
+        
         return len(self.inventory)
 
     def get_action_messages(self):
+        '''
+        Construit la liste des messages d'action pour l'UI.
+        
+        Returns
+        -------
+        list
+            Une liste de chaînes de caractères (les `action_message` 
+            formatés de chaque action).
+        '''
+        
         messages = [ ]
         for item in self.inventory:
             messages.append(item.action_message)
         return messages
     
     def checkInv_activation_condition(self, player, room_object : RoomInventoryObject, test=False):
+        '''
+        Vérifie si le joueur remplit la condition d'activation (coût) 
+        pour une action.
+        
+        Parameters
+        ----------
+        player : Player
+            L'instance du joueur.
+        room_object : RoomInventoryObject
+            L'action dont la condition est vérifiée.
+        test : bool
+            (Non utilisé directement ici, passé à `check_condition`).
+
+        Returns
+        -------
+        bool
+            Résultat de `player.check_condition()`.
+        '''
+        
         result = player.check_condition(room_object.activation_condition)
         return result
 
     def use_item(self,player, room_object : RoomInventoryObject, test=False):
+        '''
+        Exécute la transaction (payer le coût, recevoir l'objet) 
+        pour une action.
+        
+        Parameters
+        ----------
+        player : Player
+            L'instance du joueur.
+        room_object : RoomInventoryObject
+            L'action à exécuter.
+        test : bool
+            Si True, outrepasse la vérification du coût (ex: Marteau).
+
+        Returns
+        -------
+        bool
+            Résultat de `player.check_Item()`.
+        '''
+        
         result = player.check_Item(room_object.activation_condition, room_object.item, test=test)
         return result
     
     def return_inventory_copy(self):
+        '''
+        Retourne une référence à cette instance d'inventaire.
+        (Note: Ne retourne pas une copie).
+        
+        Returns
+        -------
+        RoomInventory
+            L'instance `self`.
+        '''
+        
         inventory = self
         return inventory
 
     def handle_action(self, player, action_index, force=False):
+        '''
+        Gère la logique principale de l'interaction du joueur 
+        avec une action de la salle.
+        
+        Vérifie si une confirmation est nécessaire, gère l'override 
+        du Marteau (Hammer), vérifie le coût, et exécute l'action 
+        en retirant l'objet de la salle.
+        
+        Parameters
+        ----------
+        player : Player
+            L'instance du joueur.
+        action_index : int
+            L'index de l'action sélectionnée dans la liste `self.inventory`.
+        force : bool
+            Si True, l'action est exécutée sans redemander de confirmation 
+            (utilisé après un "Oui" de l'UI).
+        
+        Returns
+        -------
+        str or tuple or None
+            - (tuple) `("CONFIRM", str)` si l'action nécessite une confirmation.
+            - (str) Un message de succès ou d'échec.
+            - `None` si la salle est vide.
+        '''
+        
         if len(self.inventory) > 0:
             item_to_act_upon = self.inventory[action_index]
             if item_to_act_upon.confirmation and not force:
@@ -191,19 +388,19 @@ class RoomInventory():
 
 
 """
-HOW TO SET MESSAGES:
-Each item type has got referencible elements to create a message.
-For example image we want to write : "You picked up Apple x 5!"
-We first write the basic message
-"You picked up _0 x _1"
-_0 and _1 are indentifiers relating to the items parameters. Each item type has got different accessibility parameters
-Example:
-Consummable Items [name, quantity]
-Nonconsummable Items [name]
-Regenerative Items [name, quantity, item to regenerate name, item to regenerate quantity]
-Inventory Type Item [name]
+COMMENT DÉFINIR LES MESSAGES :
+Chaque type d'objet possède des éléments référençables pour créer un message.
+Par exemple, si nous voulons écrire : « Vous avez ramassé Apple x 5 ! »
+On écrit d'abord le message de base
+« Vous avez ramassé _0 x _1 »
+_0 et _1 sont des identifiants liés aux paramètres de l'objet. Chaque type d'objet possède différents paramètres accessibles
+Exemple :
+Objets Consommables [name, quantity]
+Objets Non-consommables [name]
+Objets Régénératifs [name, quantity, item to regenerate name, item to regenerate quantity]
+Objet de type Inventaire [name]
 
-The index of the element in each list represents the parameter.
+L'index de l'élément dans chaque liste représente le paramètre.
 """
 #Room Item - Name, Item to collect/interact with, Activation Condition (None if No item needed to interact),"Action Msg", "Action Sucess", "Action Failure"
 room_Dice = RoomInventoryObject("Dice",player_Dice.return_item_with_amount(1),None,"Take _0 x _1", "You took _1 _0(s)","Couldn't take item")
