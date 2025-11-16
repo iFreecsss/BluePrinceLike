@@ -141,9 +141,13 @@ class Room_Inventory():
         return messages
     
     def checkInv_activation_condition(self, player, room_object : RoomObject, test=False):
-        result = player.check_Item(room_object.activation_condition, room_object.item, test=test)
+        result = player.check_condition(room_object.activation_condition)
         return result
 
+    def use_item(self,player, room_object : RoomObject, test=False):
+        result = player.check_Item(room_object.activation_condition, room_object.item, test=test)
+        return result
+    
     def set_inventory(self, inventory):
         self.inventory = inventory
 
@@ -201,7 +205,7 @@ class Room_Inventory():
                         return "The hole was empty"
                     else:
                         return "The locker was empty"
-                
+                self.use_item(player, item_to_act_upon, test=test)
                 msg = item_to_act_upon.action_success
 
                 if isinstance(item_to_act_upon.item,Inventory):

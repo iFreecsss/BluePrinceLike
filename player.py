@@ -29,15 +29,25 @@ class Player:
     def face(self,direction):
         self.direction = direction
     
+    def check_condition(self, condition :Item):
+        inventory = self.inventory.inventory
+        if condition is not None:
+            if condition.name in inventory and inventory[condition.name].quantity >= condition.quantity:
+                return True
+            else:
+                return False
+        else:
+            return True
+
     def check_Item(self,condition : Item, item: Item, test=False):
         inventory = self.inventory.inventory
         if not condition: 
-            if test: return True # si pas de condition, on peut toujours faire l'action
             if item.name in inventory:
                 inventory[item.name].add(item.quantity) 
             else:
                 item.use(self, item.quantity)
             return True
+        
         elif condition.name in inventory:
             result = self.use(condition, test=test)
             if result == True and (not isinstance(item,Inventory)):
@@ -46,6 +56,7 @@ class Player:
                 else:
                     item.use(self, item.quantity)
             return result
+        
         else:
             return False
         

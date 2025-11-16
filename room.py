@@ -865,10 +865,10 @@ class Kitchen(RoomObject):
         """
         room_Menu = Room_Inventory()
 
-        kitchen_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(2), "Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item")
-        kitchen_ClubSandwich = RoomTypeObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
-        kitchen_ChefSalad = RoomTypeObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
-        kitchen_TomatoSoup = RoomTypeObject("Tomato Soup",player_TomatoSoup.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item")
+        kitchen_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(2), "Take _0 x _1", "You ate the _0(s) and gained _3 _2(s)!","Couldn't take item",confirmation=True)
+        kitchen_ClubSandwich = RoomTypeObject("Club Sandwich",player_ClubSandwich.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item",confirmation=True)
+        kitchen_ChefSalad = RoomTypeObject("Chef Salad",player_ChefSalad.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item",confirmation=True)
+        kitchen_TomatoSoup = RoomTypeObject("Tomato Soup",player_TomatoSoup.return_item_with_amount(1),player_Coin.return_item_with_amount(8),"Buy _0", "You ate the _0 and gained _3 _2(s)!","Couldn't take item",confirmation=True)
 
         room_Menu.addInventory(kitchen_Banana)
         room_Menu.addInventory(kitchen_ClubSandwich)
@@ -914,13 +914,13 @@ class Commissary(RoomObject):
         Set l'inventaire de la salle pour gérer l'achat de nourriture.
         """
 
-        commissary_Diamond = RoomTypeObject("Diamond", player_Diamond.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item")
-        commissary_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0 and restored _4 _3!","Couldn't buy item")
-        commissary_Shovel = RoomTypeObject("Shovel", player_shovel.return_item_with_amount(1),player_Coin.return_item_with_amount(6), "Buy _0", "You bought the _0","Couldn't buy item")
-        commissary_hammer = RoomTypeObject("Hammer", player_hammer.return_item_with_amount(1),player_Coin.return_item_with_amount(8), "Buy _0", "You bought the _0","Couldn't buy item")
-        commissary_MetalDetector = RoomTypeObject("Metal Detector", player_metal_detector.return_item_with_amount(1),player_Coin.return_item_with_amount(10), "Buy _0", "You bought the _0","Couldn't buy item")
-        commissary_diamond_set = RoomTypeObject("Set of Diamonds", player_Diamond.return_item_with_amount(random.randint(3,4)),player_Coin.return_item_with_amount(10), "Buy _0", "You got _1 diamonds","Couldn't buy item")
-        commissary_Key = RoomTypeObject("Key", player_Key.return_item_with_amount(1),player_Coin.return_item_with_amount(10), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item")
+        commissary_Diamond = RoomTypeObject("Diamond", player_Diamond.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item",confirmation=True)
+        commissary_Banana = RoomTypeObject("Banana", player_Banana.return_item_with_amount(1),player_Coin.return_item_with_amount(3), "Buy _0 x _1", "You bought _1 _0 and restored _4 _3!","Couldn't buy item",confirmation=True)
+        commissary_Shovel = RoomTypeObject("Shovel", player_shovel.return_item_with_amount(1),player_Coin.return_item_with_amount(6), "Buy _0", "You bought the _0","Couldn't buy item",confirmation=True)
+        commissary_hammer = RoomTypeObject("Hammer", player_hammer.return_item_with_amount(1),player_Coin.return_item_with_amount(8), "Buy _0", "You bought the _0","Couldn't buy item",confirmation=True)
+        commissary_MetalDetector = RoomTypeObject("Metal Detector", player_metal_detector.return_item_with_amount(1),player_Coin.return_item_with_amount(10), "Buy _0", "You bought the _0","Couldn't buy item",confirmation=True)
+        commissary_diamond_set = RoomTypeObject("Set of Diamonds", player_Diamond.return_item_with_amount(random.randint(3,4)),player_Coin.return_item_with_amount(10), "Buy _0", "You got _1 diamonds","Couldn't buy item",confirmation=True)
+        commissary_Key = RoomTypeObject("Key", player_Key.return_item_with_amount(1),player_Coin.return_item_with_amount(10), "Buy _0 x _1", "You bought _1 _0","Couldn't buy item",confirmation=True)
 
         room_item_pool = [commissary_Diamond, commissary_Banana,commissary_Shovel,commissary_hammer,commissary_MetalDetector,commissary_diamond_set,commissary_Key]
 
